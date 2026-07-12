@@ -11,6 +11,11 @@ plugins/voice/                      # the "voice" plugin
   skills/writing-in-robs-voice/
     SKILL.md                        # Rob's full voice profile (source of truth)
     references/blog-index.md        # index of his blog posts, loaded on demand
+plugins/adr-toolkit/                # the "adr-toolkit" plugin (Python-backed)
+  .claude-plugin/plugin.json
+  skills/adr-toolkit/SKILL.md
+  packs/                            # composable ADR packs (universal, python, react, ...)
+  bin/install.sh                    # one-time venv bootstrap (see below)
 ```
 
 ## The voice skill
@@ -30,6 +35,18 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 - Only `plugin.json` goes inside a `.claude-plugin/` directory; component folders sit at the plugin root.
 - Skills need a frontmatter `name:` so their invocation name stays stable across updates.
 - Plugins here omit a `version` field, so **every push is treated as an update** (the git commit SHA is the version). Add `"version"` to a `plugin.json` only if you want to gate updates behind manual bumps.
+
+## Plugin-source policy
+
+Where a new plugin's code lives depends on where it came from:
+
+| Case | Handling | marketplace source |
+| --- | --- | --- |
+| Mine, source belongs here (`voice`) | Vendor under `plugins/<name>/` | `"./plugins/<name>"` |
+| Mine, was a separate repo (`adr-toolkit`) | Vendor + archive the old repo | `"./plugins/<name>"` |
+| Someone else's plugin | Catalog, don't copy their code | `{"source":{"source":"github","repo":"owner/repo"}}` or `/plugin marketplace add owner/repo` |
+
+`adr-toolkit` is Python-backed, unlike `voice` (pure markdown skill): after installing or updating the plugin, run `${CLAUDE_PLUGIN_ROOT}/bin/install.sh` once to bootstrap its venv and editable package install before the CLI works.
 
 ## Install / update
 

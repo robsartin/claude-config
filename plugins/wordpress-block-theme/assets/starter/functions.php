@@ -132,3 +132,90 @@ if ( ! function_exists( 'starter_paginated_rel_links' ) ) {
 	}
 }
 add_action( 'wp_head', 'starter_paginated_rel_links' );
+
+if ( ! function_exists( 'starter_month_nav' ) ) {
+	/**
+	 * [starter_month_nav] — on date archives, link to the nearest earlier and later
+	 * month that has published posts ("prev/next month"). Empty on non-date views, or
+	 * when no adjacent month has posts. Rendered via a core Shortcode block so the
+	 * template markup stays canonical (see references/block-markup-rules.md).
+	 */
+	function starter_month_nav() {
+		if ( ! is_date() ) {
+			return '';
+		}
+		$year  = (int) get_query_var( 'year' );
+		$month = (int) get_query_var( 'monthnum' );
+		if ( ! $year || ! $month ) {
+			return '';
+		}
+		$start = sprintf( '%04d-%02d-01 00:00:00', $year, $month );
+		$end   = ( 12 === $month )
+			? sprintf( '%04d-01-01 00:00:00', $year + 1 )
+			: sprintf( '%04d-%02d-01 00:00:00', $year, $month + 1 );
+
+		$prev = get_posts(
+			array(
+				'numberposts' => 1,
+				'post_status' => 'publish',
+				'orderby'     => 'date',
+				'order'       => 'DESC',
+				'fields'      => 'ids',
+				'date_query'  => array( array( 'before' => $start ) ),
+			)
+		);
+		$next = get_posts(
+			array(
+				'numberposts' => 1,
+				'post_status' => 'publish',
+				'orderby'     => 'date',
+				'order'       => 'ASC',
+				'fields'      => 'ids',
+				'date_query'  => array( array( 'after' => $end, 'inclusive' => true ) ),
+			)
+		);
+		if ( ! $prev && ! $next ) {
+			return '';
+		}
+
+		$html = '<nav class="starter-month-nav" aria-label="' . esc_attr__( 'Adjacent months', 'starter' ) . '" style="display:flex;justify-content:space-between;gap:1rem;margin-block:1.5rem">';
+		if ( $prev ) {
+			$html .= sprintf(
+				'<a rel="prev" href="%s">&#8592; %s</a>',
+				esc_url( get_month_link( get_the_time( 'Y', $prev[0] ), get_the_time( 'n', $prev[0] ) ) ),
+				esc_html( get_the_time( 'F Y', $prev[0] ) )
+			);
+		} else {
+			$html .= '<span></span>';
+		}
+		if ( $next ) {
+			$html .= sprintf(
+				'<a rel="next" href="%s">%s &#8594;</a>',
+				esc_url( get_month_link( get_the_time( 'Y', $next[0] ), get_the_time( 'n', $next[0] ) ) ),
+				esc_html( get_the_time( 'F Y', $next[0] ) )
+			);
+		} else {
+			$html .= '<span></span>';
+		}
+		$html .= '</nav>';
+		return $html;
+	}
+}
+if ( ! function_exists( 'starter_render_month_nav' ) ) {
+	/**
+	 * Fill the month-nav slot on date archives. The template ships an empty group
+	 * with class "starter-month-nav-slot"; this replaces it with the prev/next-month
+	 * links at render. A render_block filter (not a shortcode) — registering a shortcode is
+	 * disallowed in themes by Theme Check.
+	 */
+	function starter_render_month_nav( $block_content, $block ) {
+		$name  = isset( $block['blockName'] ) ? $block['blockName'] : '';
+		$class = isset( $block['attrs']['className'] ) ? $block['attrs']['className'] : '';
+		if ( 'core/paragraph' === $name && false !== strpos( $class, 'starter-month-nav-slot' ) ) {
+			return starter_month_nav();
+		}
+		return $block_content;
+	}
+}
+add_filter( 'render_block', 'starter_render_month_nav', 10, 2 );
+

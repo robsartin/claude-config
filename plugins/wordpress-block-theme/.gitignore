@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node / wp-env
+node_modules/
+# Local wp-env overrides (e.g. testing against WP trunk / the Gutenberg plugin) — never ship
+.wp-env.override.json
+
+# Build artifacts
+*.zip
+
+# Editor
+.idea/
+.vscode/
+.superpowers/

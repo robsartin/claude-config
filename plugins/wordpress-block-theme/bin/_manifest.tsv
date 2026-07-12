@@ -1,0 +1,16 @@
+A	bin/_wcag.py	bin/_wcag.py
+A	bin/validate-theme-json.py	bin/validate-theme-json.py
+B	bin/check-templates.py	bin/check-templates.py
+B	bin/check-contrast.py	bin/check-contrast.py
+B	bin/check-button-contrast.py	bin/check-button-contrast.py
+B	bin/check-font-fallbacks.py	bin/check-font-fallbacks.py
+B	bin/check-patterns.py	bin/check-patterns.py
+B	bin/check-frontpage.py	bin/check-frontpage.py
+B	bin/check-a11y.sh	bin/check-a11y.sh
+B	bin/check-all.sh	bin/check-all.sh
+B	bin/theme-check.sh	bin/theme-check.sh
+B	bin/theme-check-run.php	bin/theme-check-run.php
+B	bin/package.sh	bin/package.sh
+B	.wp-env.json	../.wp-env.json
+B	phpcs.xml	phpcs.xml
+C	functions.php	functions.php

@@ -14,6 +14,11 @@
       "name": "adr-toolkit",
       "source": "./plugins/adr-toolkit",
       "description": "Scaffold a stack-appropriate docs/adr/ from composable ADR packs."
+    },
+    {
+      "name": "wordpress-block-theme",
+      "source": "./plugins/wordpress-block-theme",
+      "description": "Build a WordPress block theme (FSE) from a canonical, self-validating starter."
     }
   ]
 }

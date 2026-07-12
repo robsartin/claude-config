@@ -1,4 +1,4 @@
-# claude-wp-theme-skill
+# wordpress-block-theme
 
 A personal [Claude](https://claude.com/claude-code) skill, **`wordpress-block-theme`**,
 that captures the hard-won, reusable knowledge for building WordPress **block
@@ -28,5 +28,5 @@ Install via the claude-config marketplace:
 
 ## Development
 
-All code lands via pull request; `main` is protected by convention (only the
-owner merges).
+This plugin lives in [robsartin/claude-config](https://github.com/robsartin/claude-config).
+Changes land via pull request to `main`, following that repo's workflow.

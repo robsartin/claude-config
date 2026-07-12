@@ -16,7 +16,16 @@ plugins/adr-toolkit/                # the "adr-toolkit" plugin (Python-backed)
   skills/adr-toolkit/SKILL.md
   packs/                            # composable ADR packs (universal, python, react, ...)
   bin/install.sh                    # one-time venv bootstrap (see below)
+plugins/wordpress-block-theme/      # the "wordpress-block-theme" plugin (content + tooling)
+  .claude-plugin/plugin.json
+  skills/wordpress-block-theme/SKILL.md
+  assets/starter/                   # canonical, self-validating block-theme starter
+  references/                       # block-markup rules, dev/editor/deploy guides
 ```
+
+## The wordpress-block-theme skill
+
+`wordpress-block-theme` is a content-and-tooling skill: a canonical, self-validating starter theme plus reference guides for building WordPress block (Full Site Editing / Gutenberg) themes. Its static gates (`assets/starter/bin/check-all.sh`) run on `python3` with no Docker required; the live theme-check (`assets/starter/bin/theme-check.sh`) needs `@wordpress/env` running.
 
 ## The voice skill
 

@@ -17,15 +17,24 @@ claude-config/
 │   │           ├── SKILL.md        # my voice profile (auto-loads when I draft prose)
 │   │           └── references/
 │   │               └── blog-index.md   # index of my blog posts, loaded on demand
-│   └── adr-toolkit/               # the "adr-toolkit" plugin (Python-backed)
+│   ├── adr-toolkit/               # the "adr-toolkit" plugin (Python-backed)
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json        # plugin manifest
+│   │   ├── skills/
+│   │   │   └── adr-toolkit/
+│   │   │       └── SKILL.md        # scaffolds docs/adr/ from composable packs
+│   │   ├── packs/                 # ADR packs: universal + language/framework/app-shape/concern
+│   │   └── bin/
+│   │       └── install.sh          # one-time venv bootstrap (Python-backed, unlike voice)
+│   └── wordpress-block-theme/     # the "wordpress-block-theme" plugin (content + tooling)
 │       ├── .claude-plugin/
 │       │   └── plugin.json        # plugin manifest
 │       ├── skills/
-│       │   └── adr-toolkit/
-│       │       └── SKILL.md        # scaffolds docs/adr/ from composable packs
-│       ├── packs/                 # ADR packs: universal + language/framework/app-shape/concern
-│       └── bin/
-│           └── install.sh          # one-time venv bootstrap (Python-backed, unlike voice)
+│       │   └── wordpress-block-theme/
+│       │       └── SKILL.md        # workflow for building a WP block (FSE) theme
+│       ├── assets/
+│       │   └── starter/            # canonical, self-validating block-theme starter
+│       └── references/            # block-markup rules, dev/editor/deploy guides
 ├── MIGRATION.md                  # how to create the repo, install, and update
 └── README.md
 ```
@@ -37,6 +46,7 @@ claude-config/
 /plugin marketplace add robsartin/claude-config
 /plugin install voice@claude-config
 /plugin install adr-toolkit@claude-config
+/plugin install wordpress-block-theme@claude-config
 ```
 
 The same plugin installs in Cowork (desktop) too. See `MIGRATION.md` for the full setup, update workflow, and how web projects fit in.
@@ -48,6 +58,10 @@ The same plugin installs in Cowork (desktop) too. See `MIGRATION.md` for the ful
 ## The adr-toolkit plugin
 
 `adr-toolkit` ships one skill, `adr-toolkit`, that scaffolds a stack-appropriate `docs/adr/` for a project from composable ADR packs (a universal baseline plus language, framework, app-shape, and concern add-ons under `plugins/adr-toolkit/packs/`). Unlike `voice`, it's Python-backed: after installing or updating it, run `${CLAUDE_PLUGIN_ROOT}/bin/install.sh` once to bootstrap its venv before the CLI works.
+
+## The wordpress-block-theme plugin
+
+`wordpress-block-theme` ships one skill, `wordpress-block-theme`, for building a WordPress block (Full Site Editing / Gutenberg) theme that passes block validation on the first try. It's a content-and-tooling plugin: a canonical, self-validating starter theme under `plugins/wordpress-block-theme/assets/starter/`, plus reference guides (block-markup rules, dev/editor workflow, WordPress.com deploy) under `plugins/wordpress-block-theme/references/`. Static gates (`bin/check-all.sh`) run on plain `python3`; the live theme-check (`bin/theme-check.sh`) needs `@wordpress/env` running.
 
 ## Adding more plugins later
 

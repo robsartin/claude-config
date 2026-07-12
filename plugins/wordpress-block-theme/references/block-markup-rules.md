@@ -169,6 +169,47 @@ The match is against the literal text "Built with the Starter Block Theme" in
 `footer.html`'s paragraph — rename that string consistently in both files if
 you customize it, or the filter silently stops matching.
 
+### A dynamic *slot* of HTML (not just a word) — same filter, matched by class, never `add_shortcode`
+
+The copyright above rewrites an existing paragraph's *text*. When you instead need
+to inject a whole block of generated HTML at a chosen spot in a template — e.g.
+prev/next-month links on a date archive — the instinct is a shortcode. **Don't:
+Theme Check REQUIRED-fails on `add_shortcode()` in a theme** ("add_shortcode() is
+plugin-territory functionality and must not be used in themes"). It will block a
+WordPress.org submission and fail any CI that runs Theme Check.
+
+Use the same `render_block` filter, but ship an empty **marker paragraph** carrying
+a distinguishing class, and have the filter *replace the whole block* with your
+generated HTML — returning `''` renders nothing:
+
+```php
+// archive.html ships:
+//   <!-- wp:paragraph {"className":"starter-month-nav-slot"} -->
+//   <p class="starter-month-nav-slot">Month navigation</p>
+//   <!-- /wp:paragraph -->
+function starter_render_month_nav( $block_content, $block ) {
+	$name  = isset( $block['blockName'] ) ? $block['blockName'] : '';
+	$class = isset( $block['attrs']['className'] ) ? $block['attrs']['className'] : '';
+	if ( 'core/paragraph' === $name && false !== strpos( $class, 'starter-month-nav-slot' ) ) {
+		return starter_month_nav(); // full <nav>…</nav>, or '' when there's nothing to show
+	}
+	return $block_content;
+}
+add_filter( 'render_block', 'starter_render_month_nav', 10, 2 );
+```
+
+Two traps:
+
+- **Match a paragraph, not an empty group.** An empty marker *group*
+  (`<div class="wp-block-group …-slot"></div>`) does not reliably reach the
+  `render_block` filter, so the callback never runs and the slot silently stays
+  empty. A paragraph (with placeholder text) fires the filter every time.
+- The placeholder text is visible in the *editor* only (the filter is front-end
+  only) — same as the copyright placeholder, and fine.
+
+See `starter_month_nav()` + `starter_render_month_nav()` in
+`assets/starter/functions.php`.
+
 ---
 
 ## 4. "Invalid content" warnings are editor-only

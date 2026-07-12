@@ -123,7 +123,7 @@ def _shipped_text_files() -> list[Path]:
     files += sorted((REPO / "packs").rglob("*.md"))
     files += sorted((REPO / "docs" / "adr").rglob("*.md"))
     files += sorted((REPO / "src").rglob("*.py"))
-    files += [REPO / "README.md", REPO / "SKILL.md"]
+    files += [REPO / "README.md", REPO / "skills" / "adr-toolkit" / "SKILL.md"]
     return files
 
 

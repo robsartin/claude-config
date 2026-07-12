@@ -1,0 +1,6 @@
+{
+  "name": "adr-toolkit",
+  "description": "Scaffold a stack-appropriate docs/adr/ from composable ADR packs.",
+  "author": { "name": "Rob Sartin" },
+  "keywords": ["adr", "architecture", "documentation", "scaffolding"]
+}

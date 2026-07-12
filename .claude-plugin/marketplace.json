@@ -9,6 +9,11 @@
       "name": "voice",
       "source": "./plugins/voice",
       "description": "Make Claude draft and edit prose in Rob Sartin's voice."
+    },
+    {
+      "name": "adr-toolkit",
+      "source": "./plugins/adr-toolkit",
+      "description": "Scaffold a stack-appropriate docs/adr/ from composable ADR packs."
     }
   ]
 }

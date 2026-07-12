@@ -1,0 +1,40 @@
+name: wordpress-block-theme
+
+on:
+  pull_request:
+    paths: ['plugins/wordpress-block-theme/**', '.github/workflows/wordpress-block-theme.yml']
+  push:
+    branches: [main]
+    paths: ['plugins/wordpress-block-theme/**', '.github/workflows/wordpress-block-theme.yml']
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/wordpress-block-theme
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Static gates (theme.json, contrast, templates, patterns, markup)
+        run: bash assets/starter/bin/check-all.sh
+      - name: update-starter smoke test
+        run: bash bin/test-update-starter.sh
+
+  theme-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/wordpress-block-theme/assets/starter
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Theme Check (live, wp-env)
+        run: bash bin/theme-check.sh
+      - name: Tear down wp-env
+        if: always()
+        run: npx @wordpress/env stop || true

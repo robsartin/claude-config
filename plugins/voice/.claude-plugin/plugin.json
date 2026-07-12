@@ -1,0 +1,8 @@
+{
+  "name": "voice",
+  "description": "Skills that make Claude draft and edit prose in Rob Sartin's voice.",
+  "author": {
+    "name": "Rob Sartin"
+  },
+  "keywords": ["voice", "writing", "style"]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "claude-config",
+  "owner": {
+    "name": "Rob Sartin"
+  },
+  "metadata": {
+    "description": "Rob Sartin's personal Claude Code configuration: skills, agents, and settings as installable plugins.",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "voice",
+      "source": "./voice",
+      "description": "Make Claude draft and edit prose in Rob Sartin's voice."
+    }
+  ]
+}

@@ -4,13 +4,12 @@
     "name": "Rob Sartin"
   },
   "metadata": {
-    "description": "Rob Sartin's personal Claude Code configuration: skills, agents, and settings as installable plugins.",
-    "pluginRoot": "./plugins"
+    "description": "Rob Sartin's personal Claude Code configuration: skills, agents, and settings as installable plugins."
   },
   "plugins": [
     {
       "name": "voice",
-      "source": "./voice",
+      "source": "./plugins/voice",
       "description": "Make Claude draft and edit prose in Rob Sartin's voice."
     }
   ]

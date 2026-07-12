@@ -20,12 +20,11 @@ Install via the claude-config marketplace:
 
 ## Layout
 
-- `SKILL.md` — the workflow + the gotcha-rules as hard constraints
+- `skills/wordpress-block-theme/SKILL.md` — the workflow + the gotcha-rules as hard constraints
 - `references/` — deep-dive rules and the WordPress.com deployment runbook
 - `assets/starter/` — a genericized-but-working block-theme scaffold + validation harness
 - `bin/update-starter.sh` — refresh the bundled starter from a source theme
 - `MANIFEST.md` — per-starter-file provenance
-- `docs/` — design spec and implementation plan
 
 ## Development
 

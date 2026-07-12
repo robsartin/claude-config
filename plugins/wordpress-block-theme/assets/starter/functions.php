@@ -201,5 +201,21 @@ if ( ! function_exists( 'starter_month_nav' ) ) {
 		return $html;
 	}
 }
-add_shortcode( 'starter_month_nav', 'starter_month_nav' );
+if ( ! function_exists( 'starter_render_month_nav' ) ) {
+	/**
+	 * Fill the month-nav slot on date archives. The template ships an empty group
+	 * with class "starter-month-nav-slot"; this replaces it with the prev/next-month
+	 * links at render. A render_block filter (not a shortcode) — registering a shortcode is
+	 * disallowed in themes by Theme Check.
+	 */
+	function starter_render_month_nav( $block_content, $block ) {
+		$name  = isset( $block['blockName'] ) ? $block['blockName'] : '';
+		$class = isset( $block['attrs']['className'] ) ? $block['attrs']['className'] : '';
+		if ( 'core/paragraph' === $name && false !== strpos( $class, 'starter-month-nav-slot' ) ) {
+			return starter_month_nav();
+		}
+		return $block_content;
+	}
+}
+add_filter( 'render_block', 'starter_render_month_nav', 10, 2 );
 

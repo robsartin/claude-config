@@ -9,7 +9,7 @@ Emit a stack-appropriate `docs/adr/` set into a repository: a universal baseline
 architecture decisions plus add-on packs for the project's language, framework,
 app-shape, and opt-in cross-cutting concerns. Content is data (`packs/` + `packs.yaml`);
 this file is the process. Engine details and the manifest schema are in
-[README.md](README.md).
+[README.md](../../README.md).
 
 ## Process
 
@@ -18,11 +18,12 @@ this file is the process. Engine details and the manifest schema are in
 From the toolkit repo, once per machine:
 
 ```bash
-./bin/install.sh
+${CLAUDE_PLUGIN_ROOT}/bin/install.sh
 ```
 
-This creates the venv, installs the package editable (putting the `adr-toolkit` console
-script on the venv's PATH), and symlinks the skill into `~/.claude/skills/`.
+This creates the venv and installs the package editable, putting the `adr-toolkit` console
+script on the venv's PATH. The skill itself is registered by the marketplace plugin
+installer, not by this script.
 
 ### 2. Interview — resolve which packs apply
 
@@ -48,7 +49,7 @@ List the pack ids you'll pass and the target repo. Get a nod before writing file
 
 ```bash
 adr-toolkit \
-  --manifest <toolkit>/packs.yaml --packs-dir <toolkit>/packs \
+  --manifest ${CLAUDE_PLUGIN_ROOT}/packs.yaml --packs-dir ${CLAUDE_PLUGIN_ROOT}/packs \
   --target <repo>/docs/adr \
   --project <repo-name> \
   --pack universal [--pack <lang> --pack <shape> ...]
@@ -63,7 +64,7 @@ user that ADRs are **immutable** — a later change supersedes an ADR, it does n
 and that re-running the toolkit **appends** after the existing sequence.
 
 Each emitted ADR opens with a YAML frontmatter block (`status`, `date`, `topic`, `tags`,
-`supersedes`, `related` — see [README.md](README.md)). When a later decision supersedes
+`supersedes`, `related` — see [README.md](../../README.md)). When a later decision supersedes
 one of these, use `adr-supersede` (below) rather than hand-editing; the toolkit never
 rewrites an ADR it has already emitted.
 
@@ -98,7 +99,7 @@ sometimes contradict decisions they already made. Reconcile first.
 3. **Get the candidate list** without writing anything:
 
    ```bash
-   adr-toolkit --manifest <tk>/packs.yaml --packs-dir <tk>/packs \
+   adr-toolkit --manifest ${CLAUDE_PLUGIN_ROOT}/packs.yaml --packs-dir ${CLAUDE_PLUGIN_ROOT}/packs \
      --target <repo>/docs/adr --project <name> --pack ... --plan
    ```
 
@@ -129,7 +130,7 @@ sometimes contradict decisions they already made. Reconcile first.
 **Invariants:** never edit their ADRs (skip ours, or add a *superseding* ADR that points at
 theirs); never silently drop anything — every skip appears in the report.
 
-Full rationale: [docs/design/2026-07-08-adr-reconciliation-design.md](docs/design/2026-07-08-adr-reconciliation-design.md).
+Full rationale: [docs/design/2026-07-08-adr-reconciliation-design.md](../../docs/design/2026-07-08-adr-reconciliation-design.md).
 
 ## Current pack coverage
 
@@ -150,4 +151,4 @@ Currently authored:
 framework, Vue, Svelte, Swift/SwiftUI, and the library/published-artifact app-shape. If a
 user names one of these, say it's not yet authored and proceed with what exists.
 
-See [`examples/`](examples/) for generated ADR sets across representative stacks.
+See [`examples/`](../../examples/) for generated ADR sets across representative stacks.

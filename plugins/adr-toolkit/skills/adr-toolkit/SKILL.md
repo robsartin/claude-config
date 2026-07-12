@@ -15,7 +15,7 @@ this file is the process. Engine details and the manifest schema are in
 
 ### 1. Ensure the engine is available
 
-From the toolkit repo, once per machine:
+Once per machine:
 
 ```bash
 ${CLAUDE_PLUGIN_ROOT}/bin/install.sh

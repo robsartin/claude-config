@@ -1,6 +1,6 @@
-# adr-claude-skill
+# adr-toolkit
 
-[![CI](https://github.com/robsartin/adr-claude-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/robsartin/adr-claude-skill/actions/workflows/ci.yml)
+[![CI](https://github.com/robsartin/claude-config/actions/workflows/adr-toolkit.yml/badge.svg)](https://github.com/robsartin/claude-config/actions/workflows/adr-toolkit.yml)
 
 A composable ADR toolkit, delivered as a Claude skill. It emits a
 stack-appropriate `docs/adr/` set into a repository: a **universal** baseline of
@@ -141,10 +141,10 @@ See [`examples/`](examples/) for generated ADR sets across representative stacks
 ./bin/install.sh
 ```
 
-Idempotent — creates the repo venv, does the editable install (putting `adr-toolkit`
-on the venv's PATH), and registers the skill by symlinking it into `~/.claude/skills/`.
-Restart Claude Code afterwards to pick up the skill. Re-run any time; it reuses an
-existing venv and leaves an existing symlink alone.
+Idempotent — creates the repo venv and does the editable install, putting the
+`adr-toolkit` and `adr-supersede` console scripts on the venv's PATH. Re-run any
+time; it reuses an existing venv. Skill discovery/registration is handled by
+installing this plugin from the claude-config marketplace, not by this script.
 
 ## Development
 

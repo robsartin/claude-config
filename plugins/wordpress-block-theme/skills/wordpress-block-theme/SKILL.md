@@ -11,12 +11,12 @@ rejects anything but the plainest, most canonical block markup.
 
 ## Workflow
 
-1. **Scaffold.** Copy `assets/starter/` to your new theme directory and rename
+1. **Scaffold.** Copy `${CLAUDE_PLUGIN_ROOT}/assets/starter/` to your new theme directory and rename
    it (directory = theme slug). Replace the `style.css` header, the design
    tokens in `theme.json`, and the `starter_`/`starter` prefixes in
    `functions.php`/`phpcs.xml`/pattern slugs with your theme's slug.
 2. **Author blocks canonically.** Follow the two hard rules below and the full
-   set in `references/block-markup-rules.md`. When in doubt, author a block in
+   set in `${CLAUDE_PLUGIN_ROOT}/references/block-markup-rules.md`. When in doubt, author a block in
    a real editor and copy its serialized markup — never hand-invent attributes.
 3. **Test in wp-env.** Run `bin/check-all.sh` (static gates, no Docker), then
    `npx @wordpress/env start` + `bin/theme-check.sh` (live).
@@ -25,7 +25,7 @@ rejects anything but the plainest, most canonical block markup.
    with a curated capture before a real launch.
 5. **Package.** `bin/package.sh` gates then builds `<slug>.zip` with a single
    top-level folder and dev files excluded.
-6. **Deploy.** Follow `references/wordpress-com-deploy.md`.
+6. **Deploy.** Follow `${CLAUDE_PLUGIN_ROOT}/references/wordpress-com-deploy.md`.
 
 ## Hard rules (never violate)
 
@@ -38,7 +38,7 @@ by the validator but silently drops the spacing when rendered* — a bug no
 editor warning catches. So carry whatever spacing a group declares in its
 inline `style`; a group is only truly bare when it declares no spacing. A
 "card" (background and/or `border-radius`) bakes those into the same inline
-`style` too. See `assets/starter/patterns/card-section.php` (card) and
+`style` too. See `${CLAUDE_PLUGIN_ROOT}/assets/starter/patterns/card-section.php` (card) and
 `plain-section.php` (plain).
 
 **2. Keep template parts plainest — bare groups, spacing in CSS/`theme.json`.**
@@ -46,21 +46,21 @@ Don't put padding attributes on a part's wrapping groups (per rule 1 a bare grou
 can't carry them anyway); put spacing in CSS/`theme.json`. For a small dynamic
 value (e.g. copyright year), a `render_block` filter on a plain paragraph is
 simpler than a Block Binding and keeps the saved markup a plain paragraph. See
-`assets/starter/parts/footer.html` + `starter_render_footer_copyright()` in
+`${CLAUDE_PLUGIN_ROOT}/assets/starter/parts/footer.html` + `starter_render_footer_copyright()` in
 `functions.php`.
 
 The remaining rules (editor-only warnings, theme-update vs saved content,
 "Clear customizations", portable blocks, styled-on-activation, version-gap
 recovery, WordPress.com quirks, pattern-nesting) are in
-**`references/block-markup-rules.md`** and **`references/wordpress-com-deploy.md`**.
+**`${CLAUDE_PLUGIN_ROOT}/references/block-markup-rules.md`** and **`${CLAUDE_PLUGIN_ROOT}/references/wordpress-com-deploy.md`**.
 
 For site-owner/editor instructions (installing, configuring, using the Site
-Editor day to day), see **`references/editor-guide.md`**. For developer
+Editor day to day), see **`${CLAUDE_PLUGIN_ROOT}/references/editor-guide.md`**. For developer
 workflow (gates, wp-env, Theme Check, adding patterns/style variations,
-packaging), see **`references/development.md`**.
+packaging), see **`${CLAUDE_PLUGIN_ROOT}/references/development.md`**.
 
 ## Maintaining this skill
 
-`bin/update-starter.sh --source <theme>` refreshes `assets/starter/` from an
+`${CLAUDE_PLUGIN_ROOT}/bin/update-starter.sh --source <theme>` refreshes `${CLAUDE_PLUGIN_ROOT}/assets/starter/` from an
 improved source theme (Class A auto-synced, Class B/C diffed for hand review).
-See `MANIFEST.md`.
+See `${CLAUDE_PLUGIN_ROOT}/MANIFEST.md`.

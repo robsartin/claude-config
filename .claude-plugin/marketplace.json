@@ -1,8 +1,6 @@
 {
   "name": "claude-config",
-  "owner": {
-    "name": "Rob Sartin"
-  },
+  "owner": { "name": "Rob Sartin" },
   "metadata": {
     "description": "Rob Sartin's personal Claude Code configuration: skills, agents, and settings as installable plugins."
   },

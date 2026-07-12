@@ -1,0 +1,6 @@
+{
+  "name": "kdp-publisher",
+  "description": "Turn a Google Doc into print-ready Amazon KDP files: paperback interior PDF, wraparound cover, cover-spec sheet, and Kindle EPUB.",
+  "author": { "name": "Rob Sartin" },
+  "keywords": ["kdp", "self-publishing", "pdf", "epub", "amazon", "book", "cover", "google-docs"]
+}

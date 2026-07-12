@@ -1,0 +1,36 @@
+name: kdp-publisher
+
+on:
+  pull_request:
+    paths: ['plugins/kdp-publisher/**', '.github/workflows/kdp-publisher.yml']
+  push:
+    branches: [main]
+    paths: ['plugins/kdp-publisher/**', '.github/workflows/kdp-publisher.yml']
+
+defaults:
+  run:
+    working-directory: plugins/kdp-publisher
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install WeasyPrint native libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libffi-dev libcairo2
+      - name: Install
+        run: pip install -e '.[dev]'
+      - name: Lint (ruff check)
+        run: ruff check .
+      - name: Format check (ruff format)
+        run: ruff format --check .
+      - name: Types (mypy --strict)
+        run: mypy
+      - name: Tests + coverage gate (total > 80%, branch-inclusive)
+        run: coverage run -m pytest && coverage report

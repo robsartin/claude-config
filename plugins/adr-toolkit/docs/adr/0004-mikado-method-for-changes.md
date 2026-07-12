@@ -1,0 +1,29 @@
+# 4. Use the Mikado Method to keep the build green
+
+- **Date:** 2026-07-07
+- **Status:** Accepted
+
+## Context
+
+Large refactorings, and changes that ripple across a codebase, tempt us into long stretches
+where nothing compiles and nothing is committable. That is where work stalls, conflicts
+pile up, and mistakes hide. We want the build green at every step, even mid-migration.
+
+## Decision
+
+We use the **Mikado Method** for refactoring, bug fixes, and new work wherever it is
+feasible:
+
+- Attempt the change directly. When it reveals prerequisites, note them as a goal graph,
+  revert, and complete the prerequisites first — leaves before the trunk.
+- Keep every committed step **green**: the build passes and tests pass after each one.
+- For type or interface migrations, prefer **parallel-change** (introduce the new form
+  alongside the old, migrate call sites incrementally, then remove the old) rather than a
+  single breaking edit.
+
+## Consequences
+
+- The build is never left broken across commits; work is always in an integrable state.
+- Big changes arrive as a sequence of small, reviewable, reversible steps.
+- There is some overhead in mapping prerequisites and maintaining parallel forms during a
+  migration, which we accept in exchange for never being stuck.

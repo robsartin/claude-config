@@ -1,0 +1,45 @@
+name: adr-toolkit
+
+on:
+  pull_request:
+    paths: ['plugins/adr-toolkit/**', '.github/workflows/adr-toolkit.yml']
+  push:
+    branches: [main]
+    paths: ['plugins/adr-toolkit/**', '.github/workflows/adr-toolkit.yml']
+
+defaults:
+  run:
+    working-directory: plugins/adr-toolkit
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e '.[dev]'
+      - name: Lint (ruff check)
+        run: ruff check .
+      - name: Format check (ruff format)
+        run: ruff format --check .
+      - name: Types (mypy --strict)
+        run: mypy
+      - name: Tests
+        run: coverage run -m pytest
+      - name: Lint ADR content
+        run: python scripts/lint_adrs.py
+      - name: Coverage gate (line > 80%, branch > 65%)
+        run: |
+          coverage json -o coverage.json
+          python scripts/check_coverage.py coverage.json
+      - name: Examples are up to date
+        run: |
+          ./bin/gen-examples.sh
+          if [ -n "$(git status --porcelain examples/)" ]; then
+            echo "examples/ is out of date — run ./bin/gen-examples.sh and commit:"
+            git status --porcelain examples/
+            exit 1
+          fi

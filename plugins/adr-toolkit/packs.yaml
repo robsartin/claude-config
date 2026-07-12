@@ -1,0 +1,114 @@
+# Manifest for the ADR toolkit. See README.md for the schema.
+packs:
+  universal:
+    axis: universal
+    path: universal
+  python:
+    axis: language
+    path: python
+  jvm:
+    axis: language
+    path: jvm
+  kotlin:
+    axis: language
+    path: kotlin
+    depends_on: [jvm]
+  java:
+    axis: language
+    path: java
+    depends_on: [jvm]
+  js-ts:
+    axis: language
+    path: js-ts
+  spring-boot:
+    axis: framework
+    path: spring-boot
+    depends_on: [jvm]
+  cli:
+    axis: app-shape
+    path: cli
+  service:
+    axis: app-shape
+    path: service
+  accessibility:
+    axis: app-shape
+    path: accessibility
+  web-frontend:
+    axis: app-shape
+    path: web-frontend
+    depends_on: [accessibility]
+  native-ui:
+    axis: app-shape
+    path: native-ui
+    depends_on: [accessibility]
+  react:
+    axis: ui-tech
+    path: react
+    depends_on: [js-ts]
+  plain-js:
+    axis: ui-tech
+    path: plain-js
+    depends_on: [js-ts]
+  compose:
+    axis: ui-tech
+    path: compose
+    depends_on: [jvm]
+  d3:
+    axis: library
+    path: d3
+  d3-react:
+    axis: interaction
+    path: interaction/d3-react
+  d3-plain:
+    axis: interaction
+    path: interaction/d3-plain
+  a11y-react:
+    axis: interaction
+    path: interaction/a11y-react
+  a11y-compose:
+    axis: interaction
+    path: interaction/a11y-compose
+  i18n:
+    axis: concern
+    path: i18n
+  observability:
+    axis: concern
+    path: observability
+  privacy:
+    axis: concern
+    path: privacy
+  i18n-jvm:
+    axis: interaction
+    path: interaction/i18n-jvm
+  i18n-js-ts:
+    axis: interaction
+    path: interaction/i18n-js-ts
+  i18n-python:
+    axis: interaction
+    path: interaction/i18n-python
+  observability-spring-boot:
+    axis: interaction
+    path: interaction/observability-spring-boot
+  observability-js-ts:
+    axis: interaction
+    path: interaction/observability-js-ts
+
+interactions:
+  - when: [d3, react]
+    adr: d3-react
+  - when: [d3, plain-js]
+    adr: d3-plain
+  - when: [accessibility, react]
+    adr: a11y-react
+  - when: [accessibility, compose]
+    adr: a11y-compose
+  - when: [i18n, jvm]
+    adr: i18n-jvm
+  - when: [i18n, js-ts]
+    adr: i18n-js-ts
+  - when: [i18n, python]
+    adr: i18n-python
+  - when: [observability, spring-boot]
+    adr: observability-spring-boot
+  - when: [observability, js-ts]
+    adr: observability-js-ts

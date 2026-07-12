@@ -1,0 +1,42 @@
+# claude-config
+
+Rob Sartin's personal Claude configuration, managed as one git repo that doubles as a Claude Code **plugin marketplace**. This is the single source of truth for his skills, agents, and settings, installed everywhere he runs Claude.
+
+## Layout
+
+```
+.claude-plugin/marketplace.json     # marketplace catalog (name: claude-config)
+plugins/voice/                      # the "voice" plugin
+  .claude-plugin/plugin.json
+  skills/writing-in-robs-voice/
+    SKILL.md                        # Rob's full voice profile (source of truth)
+    references/blog-index.md        # index of his blog posts, loaded on demand
+```
+
+## The voice skill
+
+`writing-in-robs-voice` is what makes Claude draft and edit prose as Rob (blog posts, LinkedIn, email, book text). It auto-loads when a task matches its description. **When editing Rob's voice, edit `plugins/voice/skills/writing-in-robs-voice/SKILL.md` here** — it is the single source of truth. (An older copy once lived in a `myClaudeVoice/voice.md`; that is retired, do not sync to it.)
+
+Before drafting anything as Rob, read that SKILL.md in full. The most load-bearing rules, as a quick reference:
+
+- **No em-dashes** in generated drafts. Use parentheticals, full stops, colons, or commas instead. (Rob's own writing uses em-dashes freely; the ban applies only to AI-generated drafts, where they read as a machine tell.)
+- **Prefer vague quantifiers** ("several", "a shelf of") over invented precise numbers. Use exact figures only for things actually measured.
+- **Authorship**: robsartin.com posts from **July 2024 onward** are Rob's voice; **January–June 2024** posts were written by his wife Rachel and brother Hank during his hospitalization and are NOT his voice. Don't imitate them.
+- The SKILL.md also carries a dated timeline of Rob's medical/life history — use it so drafts get facts right.
+
+## Maintaining this repo
+
+- **Add a plugin**: create `plugins/<name>/.claude-plugin/plugin.json`, put components at the plugin root (`skills/`, `agents/`, `hooks/hooks.json`, `.mcp.json`), then add an entry to the `plugins` array in `.claude-plugin/marketplace.json`.
+- Only `plugin.json` goes inside a `.claude-plugin/` directory; component folders sit at the plugin root.
+- Skills need a frontmatter `name:` so their invocation name stays stable across updates.
+- Plugins here omit a `version` field, so **every push is treated as an update** (the git commit SHA is the version). Add `"version"` to a `plugin.json` only if you want to gate updates behind manual bumps.
+
+## Install / update
+
+```bash
+/plugin marketplace add robsartin/claude-config     # once, per machine
+/plugin install voice@claude-config
+
+# after pushing changes:
+/plugin marketplace update claude-config
+```

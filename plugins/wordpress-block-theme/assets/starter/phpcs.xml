@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<ruleset name="Starter Block Theme">
+  <description>WordPress coding standards for the theme's PHP.</description>
+  <file>functions.php</file>
+  <file>patterns</file>
+  <rule ref="WordPress-Extra"/>
+  <rule ref="WordPress.WP.I18n">
+    <properties>
+      <property name="text_domain" type="array"><element value="starter"/></property>
+    </properties>
+  </rule>
+  <config name="minimum_supported_wp_version" value="6.5"/>
+</ruleset>

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "settings": {
+    "appearanceTools": true,
+    "layout": { "contentSize": "46rem", "wideSize": "62rem" },
+    "color": {
+      "custom": true,
+      "defaultPalette": false,
+      "palette": [
+        { "slug": "paper", "name": "Paper", "color": "#f6f6f4" },
+        { "slug": "ink", "name": "Ink", "color": "#1a1e24" },
+        { "slug": "muted", "name": "Muted", "color": "#525860" },
+        { "slug": "border", "name": "Border", "color": "#dfe0dd" },
+        { "slug": "surface", "name": "Surface", "color": "#e9ebee" },
+        { "slug": "accent", "name": "Accent", "color": "#3d5a75" },
+        { "slug": "accent-text", "name": "Accent Text", "color": "#33506a" }
+      ]
+    },
+    "typography": {
+      "fluid": true,
+      "fontFamilies": [
+        {
+          "slug": "heading",
+          "name": "Heading",
+          "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif"
+        },
+        {
+          "slug": "body",
+          "name": "Body",
+          "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif"
+        }
+      ],
+      "fontSizes": [
+        { "slug": "small", "name": "Small", "size": "0.875rem", "fluid": false },
+        { "slug": "medium", "name": "Medium", "size": "1.0625rem", "fluid": { "min": "1rem", "max": "1.125rem" } },
+        { "slug": "large", "name": "Large", "size": "1.5rem", "fluid": { "min": "1.25rem", "max": "1.75rem" } },
+        { "slug": "x-large", "name": "X-Large", "size": "2.5rem", "fluid": { "min": "2rem", "max": "3rem" } }
+      ]
+    },
+    "spacing": {
+      "spacingSizes": [
+        { "slug": "small", "name": "Small", "size": "clamp(1rem, 2vw, 1.5rem)" },
+        { "slug": "medium", "name": "Medium", "size": "clamp(1.5rem, 4vw, 2.5rem)" },
+        { "slug": "large", "name": "Large", "size": "clamp(2.5rem, 6vw, 4rem)" }
+      ]
+    }
+  },
+  "styles": {
+    "color": { "background": "var:preset|color|paper", "text": "var:preset|color|ink" },
+    "typography": { "fontFamily": "var:preset|font-family|body", "lineHeight": "1.6" },
+    "elements": {
+      "link": { "color": { "text": "var:preset|color|accent-text" } },
+      "heading": { "typography": { "fontFamily": "var:preset|font-family|heading", "fontWeight": "700", "lineHeight": "1.2" } },
+      "button": {
+        "color": { "background": "var:preset|color|accent", "text": "#ffffff" },
+        "border": { "radius": "6px" }
+      }
+    }
+  }
+}

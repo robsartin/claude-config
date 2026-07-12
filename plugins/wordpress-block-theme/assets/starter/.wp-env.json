@@ -1,0 +1,7 @@
+{
+  "core": "WordPress/WordPress#6.5",
+  "themes": [ "." ],
+  "plugins": [ "https://downloads.wordpress.org/plugin/theme-check.latest-stable.zip" ],
+  "testsEnvironment": false,
+  "config": { "WP_DEBUG": true }
+}

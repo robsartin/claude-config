@@ -1,0 +1,6 @@
+{
+  "name": "wordpress-block-theme",
+  "description": "Build a WordPress block theme (FSE) from a canonical, self-validating starter.",
+  "author": { "name": "Rob Sartin" },
+  "keywords": ["wordpress", "block-theme", "fse", "gutenberg", "theme"]
+}

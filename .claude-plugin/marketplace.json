@@ -24,6 +24,11 @@
       "name": "kdp-publisher",
       "source": "./plugins/kdp-publisher",
       "description": "Turn a Google Doc into print-ready Amazon KDP files: interior PDF, wraparound cover, cover-spec sheet, and Kindle EPUB."
+    },
+    {
+      "name": "plugin-sync",
+      "source": "./plugins/plugin-sync",
+      "description": "Slash command to sync installed plugins with the claude-config marketplace."
     }
   ]
 }

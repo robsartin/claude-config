@@ -9,9 +9,12 @@
 #   4. with --extras, also re-adds the external marketplaces + plugins used
 #      elsewhere (superpowers, frontend-design, claude-hud)
 #
-# Run it from a clone of the repo:
-#   git clone https://github.com/robsartin/claude-config
-#   claude-config/bin/bootstrap.sh [--extras] [--dry-run]
+# On a fresh machine no git clone is needed — adding the marketplace already
+# clones this repo into Claude Code's cache, so bootstrap.sh is right there:
+#   claude plugin marketplace add robsartin/claude-config
+#   bash ~/.claude/plugins/marketplaces/claude-config/bin/bootstrap.sh [--extras] [--dry-run]
+#
+# (Or run it from your own checkout: claude-config/bin/bootstrap.sh [--extras])
 #
 # What this does NOT set up (machine-local, not in the marketplace):
 #   ~/.claude/settings.json, the claude-hud statusline config, keybindings,

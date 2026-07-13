@@ -26,30 +26,48 @@ claude-config/
 │   │   ├── packs/                 # ADR packs: universal + language/framework/app-shape/concern
 │   │   └── bin/
 │   │       └── install.sh          # one-time venv bootstrap (Python-backed, unlike voice)
-│   └── wordpress-block-theme/     # the "wordpress-block-theme" plugin (content + tooling)
-│       ├── .claude-plugin/
-│       │   └── plugin.json        # plugin manifest
-│       ├── skills/
-│       │   └── wordpress-block-theme/
-│       │       └── SKILL.md        # workflow for building a WP block (FSE) theme
-│       ├── assets/
-│       │   └── starter/            # canonical, self-validating block-theme starter
-│       └── references/            # block-markup rules, dev/editor/deploy guides
+│   ├── wordpress-block-theme/     # the "wordpress-block-theme" plugin (content + tooling)
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json        # plugin manifest
+│   │   ├── skills/
+│   │   │   └── wordpress-block-theme/
+│   │   │       └── SKILL.md        # workflow for building a WP block (FSE) theme
+│   │   ├── assets/
+│   │   │   └── starter/            # canonical, self-validating block-theme starter
+│   │   └── references/            # block-markup rules, dev/editor/deploy guides
+│   ├── kdp-publisher/             # Google Doc → KDP interior/cover/spec/EPUB (Python)
+│   └── plugin-sync/               # the /plugin-sync:sync command + sync-plugins.sh
+├── bin/
+│   └── bootstrap.sh              # one-shot new-machine setup
 ├── MIGRATION.md                  # how to create the repo, install, and update
 └── README.md
 ```
 
-## Install
+## New machine setup
+
+Adding the marketplace clones this whole repo into Claude Code's cache, so `bin/bootstrap.sh` is available with no separate `git clone`:
 
 ```bash
-# In Claude Code (CLI):
-/plugin marketplace add robsartin/claude-config
-/plugin install voice@claude-config
-/plugin install adr-toolkit@claude-config
-/plugin install wordpress-block-theme@claude-config
+claude plugin marketplace add robsartin/claude-config
+bash ~/.claude/plugins/marketplaces/claude-config/bin/bootstrap.sh --extras
 ```
 
-The same plugin installs in Cowork (desktop) too. See `MIGRATION.md` for the full setup, update workflow, and how web projects fit in.
+`bootstrap.sh` adds the marketplace, installs/updates every claude-config plugin (via `plugins/plugin-sync/sync-plugins.sh`, which reads the catalog — no hard-coded list), and runs the `adr-toolkit` Python engine bootstrap. `--extras` also sets up the external marketplaces I use (superpowers, frontend-design, claude-hud); `--dry-run` previews without changing anything. Restart Claude Code when it finishes.
+
+Not carried over (machine-local): `settings.json`, the claude-hud statusline/HUD config, keybindings, and memory.
+
+## Keeping plugins in sync
+
+Once `plugin-sync` is installed, run `/plugin-sync:sync` in any session to install new + update installed claude-config plugins. `--dry-run` previews; `--prune` uninstalls plugins that have been dropped from the marketplace.
+
+## Installing individual plugins
+
+```bash
+/plugin marketplace add robsartin/claude-config       # once per machine
+/plugin install <name>@claude-config                  # voice · adr-toolkit · wordpress-block-theme · kdp-publisher · plugin-sync
+```
+
+The same plugins install in Cowork (desktop) too. See `MIGRATION.md` for the full setup, update workflow, and how web projects fit in.
 
 ## The voice plugin
 

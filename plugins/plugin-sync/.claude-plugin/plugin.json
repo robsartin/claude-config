@@ -1,0 +1,7 @@
+{
+  "name": "plugin-sync",
+  "description": "Slash command to sync installed plugins with the claude-config marketplace.",
+  "author": { "name": "Rob Sartin" },
+  "keywords": ["plugins", "marketplace", "sync", "tooling"],
+  "commands": ["./commands/sync.md"]
+}

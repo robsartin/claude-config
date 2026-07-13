@@ -19,6 +19,11 @@
       "name": "wordpress-block-theme",
       "source": "./plugins/wordpress-block-theme",
       "description": "Build a WordPress block theme (FSE) from a canonical, self-validating starter."
+    },
+    {
+      "name": "kdp-publisher",
+      "source": "./plugins/kdp-publisher",
+      "description": "Turn a Google Doc into print-ready Amazon KDP files: interior PDF, wraparound cover, cover-spec sheet, and Kindle EPUB."
     }
   ]
 }

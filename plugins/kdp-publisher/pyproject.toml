@@ -1,0 +1,56 @@
+[project]
+name = "kdp-publisher"
+version = "0.1.0"
+description = "Turn a Google Doc manuscript into print-ready Amazon KDP files (interior PDF, wraparound cover, cover-spec, Kindle EPUB)."
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = [
+  "python-docx>=1.1",
+  "weasyprint>=62",
+  "pypdf>=4.0",
+  "pillow>=10",
+  "ebooklib>=0.18",
+]
+
+[project.scripts]
+kdp-publisher = "kdp_publisher.cli:console_main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "coverage>=7", "mypy>=1.11"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kdp_publisher"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E401", "E402"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["kdp_publisher"]
+branch = true
+omit = ["*/__main__.py"]
+
+[tool.coverage.report]
+# Universal quality gate: line > 80%, branch > 65%.
+fail_under = 80
+show_missing = true

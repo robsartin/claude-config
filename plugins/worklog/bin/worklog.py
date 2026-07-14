@@ -133,12 +133,21 @@ def _cmd_log(rest):
     ap.add_argument("--branch", default=None)
     ap.add_argument("--date", default=None)
     a = ap.parse_args(rest)
+    cfg = load_config(_default_config_path())
+    if a.type not in cfg["types"]:
+        print(f"worklog: unknown type '{a.type}' (allowed: {', '.join(cfg['types'])})", file=sys.stderr)
+        return 2
+    if a.date is not None:
+        try:
+            datetime.date.fromisoformat(a.date)
+        except ValueError:
+            print(f"worklog: invalid --date '{a.date}' (expected YYYY-MM-DD)", file=sys.stderr)
+            return 2
     date = a.date or datetime.date.today().isoformat()
     meta = f"[branch: {a.branch}]" if a.branch else None
     line = format_entry(a.type, a.ref, a.text, meta)
     dedup = f"**{a.type}** {a.ref} —" if (a.ref and a.type != "note") else None
 
-    cfg = load_config(_default_config_path())
     path = worklog_path(cfg)
     if not os.path.isdir(os.path.dirname(path)):
         print(f"worklog: vault dir missing ({os.path.dirname(path)}) — configure worklog.vaultPath.",

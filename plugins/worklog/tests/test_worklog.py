@@ -94,6 +94,23 @@ def test_cmd_log_end_to_end_no_ref_prefix_collision(tmp_path, monkeypatch):
     assert text.count("PROJ-10 — First thing") == 1         # idempotent, no dup
 
 
+def test_cmd_log_rejects_unknown_type(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    assert wl.main(["log", "bogus", "x"]) != 0
+    assert not (vault / "Worklog.md").exists()   # nothing written on rejection
+
+
+def test_cmd_log_rejects_bad_date(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    assert wl.main(["log", "note", "x", "--date", "not-a-date"]) != 0
+
+
 SAMPLE = (
     "## 2026-07-14\n- **started** PROJ-1 — A\n- **note** off-ticket\n"
     "## 2026-07-10\n- **shipped** PROJ-0 — B\n"

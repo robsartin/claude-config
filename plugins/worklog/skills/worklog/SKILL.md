@@ -21,21 +21,44 @@ python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" log <type> "<text>" [--ref <key>]
 for the same ref on the same day are idempotent; notes always append. If the vault dir is
 missing, the helper says so — tell the user to set `worklog.vaultPath`, don't create a vault.
 
+## Factual pull (optional — work environments)
+
+When `jira`/`glab` are installed (a work setup), augment the hand-logged notes with an
+authoritative "shipped" spine — tickets you resolved and MRs you merged in the range. This
+catches work that never got hand-logged. Skip silently if the tools aren't available; the
+reports still work from `Worklog.md` alone.
+
+```bash
+# Jira tickets you touched in the range (use a plain date, not -14d, to avoid flag parsing):
+jira issue list -a"$(jira me)" --updated-after <SINCE> --raw \
+  | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-jira
+# GitLab MRs you merged in the range (cross-project):
+glab api "/merge_requests?scope=created_by_me&state=merged&updated_after=<SINCE>T00:00:00Z&per_page=100" \
+  | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-gitlab
+```
+
+Both emit normalized `{date, type: "shipped", ref, text}` entries. If a `ref` from the pull
+already appears in the hand-logged entries, prefer the hand-logged one (it has your context) and
+drop the duplicate. Everything is still factual — the pull never invents activity.
+
 ## Weekly report
 
 1. Resolve the range: default is the current week (Mon–today) unless the user gives one.
-2. Pull the entries:
+2. Pull the hand-logged entries:
    `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" entries --since <YYYY-MM-DD> --until <YYYY-MM-DD>`
+   Then, if `jira`/`glab` are available, run the **Factual pull** above for the same range and
+   merge (dedup by `ref`, hand-logged wins).
 3. Draft a report from ONLY those entries — group by ticket/theme, lead with shipped work.
    Use the `worklog.weeklyTemplate` from config as the format if present; otherwise a simple
-   "Shipped / In progress / Notes" structure. If the range is empty, say "nothing logged in
+   "Shipped / In progress / Notes" structure. If there's nothing in range, say "nothing logged in
    <range>" — never invent activity.
 4. Write the draft to `<vaultPath>/<reportsDir>/Weekly-<YYYY>-W<ww>.md` for the user to edit.
    Do not send or post it. Professional register — do not use the personal `voice` skill, and do not include anything not present in the pulled entries.
 
 ## Performance review
 
-Same shape, longer horizon (default the current quarter, or an explicit range). Synthesize
-accomplishments, recurring themes, scope/impact, and collaboration into a narrative, shaped by
-`worklog.perfTemplate` if present. Draft only, into the vault. Professional register — do not
-use the personal `voice` skill, and do not claim work that isn't in the log.
+Same shape, longer horizon (default the current quarter, or an explicit range) — pull the
+hand-logged entries and, if available, the **Factual pull** spine for the range, merged the same
+way. Synthesize accomplishments, recurring themes, scope/impact, and collaboration into a
+narrative, shaped by `worklog.perfTemplate` if present. Draft only, into the vault. Professional
+register — do not use the personal `voice` skill, and do not claim work that isn't in the log.

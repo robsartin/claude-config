@@ -128,3 +128,71 @@ def test_entries_in_range_inclusive():
     got = wl.entries_in_range(SAMPLE, "2026-07-12", "2026-07-14")
     dates = {e["date"] for e in got}
     assert dates == {"2026-07-14"}  # 07-10 excluded
+
+
+# Synthetic, shaped like `jira issue list --raw` (Jira search response).
+JIRA_LIST = {
+    "issues": [
+        {"key": "PROJ-9", "fields": {"summary": "Ship the thing",
+                                     "resolutiondate": "2026-07-14T11:10:50.442-0500",
+                                     "status": {"name": "Done"}}},
+        {"key": "PROJ-8", "fields": {"summary": "Older", "updated": "2026-07-01T09:00:00.000-0500",
+                                     "status": {"name": "In Progress"}}},
+    ]
+}
+
+
+def test_parse_jira_list():
+    got = wl.parse_jira_list(JIRA_LIST)
+    assert got[0] == {"date": "2026-07-14", "type": "shipped", "ref": "PROJ-9",
+                      "text": "PROJ-9 — Ship the thing"}
+    assert got[1]["date"] == "2026-07-01"  # falls back to `updated`
+
+
+def test_parse_jira_list_accepts_bare_list_and_json_string():
+    bare = JIRA_LIST["issues"]
+    assert wl.parse_jira_list(bare)[0]["ref"] == "PROJ-9"
+    assert wl.parse_jira_list(json.dumps(JIRA_LIST))[0]["ref"] == "PROJ-9"
+
+
+# Synthetic, shaped like `glab api /merge_requests?...` (JSON array of MRs).
+GITLAB_MRS = [
+    {"iid": 123, "title": "Fix the bug", "merged_at": "2026-07-13T22:00:00.000Z",
+     "references": {"full": "grp/app!123"}, "web_url": "https://gitlab.com/grp/app/-/merge_requests/123"},
+    {"iid": 7, "title": "No refs block", "merged_at": "2026-07-10T08:00:00.000Z"},
+]
+
+
+def test_parse_gitlab_mrs():
+    got = wl.parse_gitlab_mrs(GITLAB_MRS)
+    assert got[0] == {"date": "2026-07-13", "type": "shipped", "ref": "grp/app!123",
+                      "text": "grp/app!123 — Fix the bug"}
+    assert got[1]["ref"] == "!7"  # falls back to !iid when references absent
+
+
+def test_parse_gitlab_mrs_accepts_json_string():
+    assert wl.parse_gitlab_mrs(json.dumps(GITLAB_MRS))[0]["ref"] == "grp/app!123"
+
+
+def test_parse_jira_list_date_falls_back_to_statuscategorychangedate():
+    issues = {"issues": [{"key": "PROJ-3", "fields": {
+        "summary": "X", "statuscategorychangedate": "2026-07-05T09:00:00.000-0500"}}]}
+    assert wl.parse_jira_list(issues)[0]["date"] == "2026-07-05"
+
+
+def test_parse_jira_list_sparse_issue_does_not_crash():
+    # no fields, no key -> empty strings, no exception
+    assert wl.parse_jira_list({"issues": [{}]}) == [
+        {"date": "", "type": "shipped", "ref": "", "text": ""}
+    ]
+
+
+def test_parse_gitlab_mrs_error_object_yields_empty():
+    # glab emits an object like {"message": "404 Not Found"} on failure
+    assert wl.parse_gitlab_mrs({"message": "404 Not Found"}) == []
+    assert wl.parse_gitlab_mrs('{"message": "401"}') == []
+
+
+def test_parse_gitlab_mrs_references_without_full_uses_iid():
+    mrs = [{"iid": 9, "title": "T", "merged_at": "2026-07-02T00:00:00Z", "references": {}}]
+    assert wl.parse_gitlab_mrs(mrs)[0]["ref"] == "!9"

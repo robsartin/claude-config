@@ -102,6 +102,48 @@ def entries_in_range(content, since, until):
     return [e for e in parse(content) if since <= e["date"] <= until]
 
 
+def parse_jira_list(raw):
+    """Normalize `jira issue list --raw` output into shipped-entry dicts
+    {date, type, ref, text}. Accepts the Jira search response ({"issues": [...]}),
+    a bare list, or a JSON string. Date is the resolution/status-change/updated
+    date, truncated to YYYY-MM-DD."""
+    data = raw if isinstance(raw, (list, dict)) else json.loads(raw)
+    issues = data.get("issues", []) if isinstance(data, dict) else data
+    out = []
+    for d in issues:
+        f = d.get("fields") or {}
+        raw_date = f.get("resolutiondate") or f.get("statuscategorychangedate") or f.get("updated") or ""
+        key = d.get("key", "") or ""
+        out.append({
+            "date": raw_date[:10],
+            "type": "shipped",
+            "ref": key,
+            "text": f"{key} — {f.get('summary', '') or ''}".strip(" —"),
+        })
+    return out
+
+
+def parse_gitlab_mrs(raw):
+    """Normalize `glab api /merge_requests?...` output (a JSON array of MRs, or a
+    JSON string) into shipped-entry dicts. Date is `merged_at` (or `updated_at`),
+    truncated to YYYY-MM-DD; ref is the full reference (e.g. group/proj!123)."""
+    data = raw if isinstance(raw, (list, dict)) else json.loads(raw)
+    if not isinstance(data, list):  # glab emits an object (e.g. {"message": "404"}) on errors
+        data = []
+    out = []
+    for mr in data:
+        raw_date = mr.get("merged_at") or mr.get("updated_at") or ""
+        refs = mr.get("references") or {}
+        ref = refs.get("full") or (f"!{mr.get('iid')}" if mr.get("iid") else "")
+        out.append({
+            "date": raw_date[:10],
+            "type": "shipped",
+            "ref": ref,
+            "text": f"{ref} — {mr.get('title', '') or ''}".strip(" —"),
+        })
+    return out
+
+
 def main(argv):
     if not argv:
         print("usage: worklog.py <log|entries> ...", file=sys.stderr)
@@ -119,6 +161,15 @@ def main(argv):
         path = worklog_path(cfg)
         content = open(path).read() if os.path.exists(path) else ""
         print(json.dumps(entries_in_range(content, a.since, a.until), indent=2))
+        return 0
+    if cmd in ("parse-jira", "parse-gitlab"):
+        text = sys.stdin.read().strip()
+        try:
+            data = json.loads(text) if text else []
+        except json.JSONDecodeError:
+            data = []  # a failed upstream jira/glab command -> empty, not a crash
+        fn = parse_jira_list if cmd == "parse-jira" else parse_gitlab_mrs
+        print(json.dumps(fn(data), indent=2))
         return 0
     print(f"unknown subcommand: {cmd}", file=sys.stderr)
     return 2

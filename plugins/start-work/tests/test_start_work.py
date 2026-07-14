@@ -1,5 +1,6 @@
 import json, os, sys
 from pathlib import Path
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 import start_work as sw
@@ -28,9 +29,6 @@ def test_load_config_partial_worklog_override_keeps_other_defaults(tmp_path):
     assert cfg["worklog"]["worklogFile"] == "Worklog.md"    # default preserved (deep-merge)
 
 
-import pytest
-
-
 @pytest.mark.parametrize("url,expected", [
     ("https://github.com/robsartin/claude-config.git", "github.com"),
     ("git@github.com:robsartin/claude-config.git", "github.com"),
@@ -52,7 +50,9 @@ def test_slugify():
     assert sw.slugify("Add API rate limiting") == "add-api-rate-limiting"
     assert sw.slugify("Fix login redirect!") == "fix-login-redirect"
     assert sw.slugify("  Multiple   spaces ") == "multiple-spaces"
-    assert sw.slugify("A" * 80).count("a") <= 50
+    capped = sw.slugify("A" * 80)
+    assert len(capped) <= 50
+    assert not capped.endswith("-")
 
 
 def test_branch_name():

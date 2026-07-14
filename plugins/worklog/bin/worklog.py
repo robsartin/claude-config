@@ -4,6 +4,7 @@ import copy
 import datetime
 import json
 import os
+import re
 import sys
 
 DEFAULTS = {
@@ -81,6 +82,26 @@ def append_entry(content, date, entry_line, dedup_key=None):
     return _render_days(preamble, days)
 
 
+_ENTRY_RE = re.compile(r"- \*\*(\w+)\*\*\s+(.*)")
+
+
+def parse(content):
+    out = []
+    date = None
+    for line in content.splitlines():
+        if line.startswith("## "):
+            date = line[3:].strip()
+        elif date:
+            m = _ENTRY_RE.match(line.strip())
+            if m:
+                out.append({"date": date, "type": m.group(1), "text": m.group(2).strip()})
+    return out
+
+
+def entries_in_range(content, since, until):
+    return [e for e in parse(content) if since <= e["date"] <= until]
+
+
 def main(argv):
     if not argv:
         print("usage: worklog.py <log|entries> ...", file=sys.stderr)
@@ -88,6 +109,17 @@ def main(argv):
     cmd, rest = argv[0], argv[1:]
     if cmd == "log":
         return _cmd_log(rest)
+    if cmd == "entries":
+        import argparse
+        ap = argparse.ArgumentParser(prog="worklog.py entries")
+        ap.add_argument("--since", required=True)
+        ap.add_argument("--until", required=True)
+        a = ap.parse_args(rest)
+        cfg = load_config(_default_config_path())
+        path = worklog_path(cfg)
+        content = open(path).read() if os.path.exists(path) else ""
+        print(json.dumps(entries_in_range(content, a.since, a.until), indent=2))
+        return 0
     print(f"unknown subcommand: {cmd}", file=sys.stderr)
     return 2
 

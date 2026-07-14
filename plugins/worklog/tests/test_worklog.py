@@ -92,3 +92,22 @@ def test_cmd_log_end_to_end_no_ref_prefix_collision(tmp_path, monkeypatch):
     assert "PROJ-10 — First thing" in text                 # kept
     assert "PROJ-1 — Second thing" in text                  # distinct ref NOT swallowed
     assert text.count("PROJ-10 — First thing") == 1         # idempotent, no dup
+
+
+SAMPLE = (
+    "## 2026-07-14\n- **started** PROJ-1 — A\n- **note** off-ticket\n"
+    "## 2026-07-10\n- **shipped** PROJ-0 — B\n"
+)
+
+
+def test_parse():
+    got = wl.parse(SAMPLE)
+    assert got[0] == {"date": "2026-07-14", "type": "started", "text": "PROJ-1 — A"}
+    assert {"date": "2026-07-14", "type": "note", "text": "off-ticket"} in got
+    assert len(got) == 3
+
+
+def test_entries_in_range_inclusive():
+    got = wl.entries_in_range(SAMPLE, "2026-07-12", "2026-07-14")
+    dates = {e["date"] for e in got}
+    assert dates == {"2026-07-14"}  # 07-10 excluded

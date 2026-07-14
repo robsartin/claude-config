@@ -26,3 +26,23 @@ def test_load_config_partial_worklog_override_keeps_other_defaults(tmp_path):
     cfg = sw.load_config(str(p))
     assert cfg["worklog"]["vaultPath"] == "/custom/vault"   # overridden
     assert cfg["worklog"]["worklogFile"] == "Worklog.md"    # default preserved (deep-merge)
+
+
+import pytest
+
+
+@pytest.mark.parametrize("url,expected", [
+    ("https://github.com/robsartin/claude-config.git", "github.com"),
+    ("git@github.com:robsartin/claude-config.git", "github.com"),
+    ("ssh://git@gitlab.corp.com/team/app.git", "gitlab.corp.com"),
+    ("https://gitlab.corp.com/team/app", "gitlab.corp.com"),
+])
+def test_host_of(url, expected):
+    assert sw.host_of(url) == expected
+
+
+def test_provider_for_remote():
+    assert sw.provider_for_remote("git@github.com:o/r.git", []) == "github"
+    assert sw.provider_for_remote("https://gitlab.corp.com/o/r.git",
+                                  ["gitlab.corp.com"]) == "gitlab"
+    assert sw.provider_for_remote("https://example.com/o/r.git", []) == "unknown"

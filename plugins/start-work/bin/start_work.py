@@ -2,6 +2,8 @@
 """start-work helpers: deterministic bits the SKILL.md calls. Stdlib only."""
 import json
 import os
+import re
+import subprocess
 import sys
 
 DEFAULTS = {
@@ -41,6 +43,29 @@ def _default_config_path():
     return os.path.join(base, "start-work.json")
 
 
+def host_of(remote_url):
+    m = re.match(r"(?:https?://|ssh://git@|git@)([^/:]+)", remote_url.strip())
+    return m.group(1) if m else ""
+
+
+def provider_for_remote(remote_url, gitlab_hosts):
+    host = host_of(remote_url)
+    if host == "github.com":
+        return "github"
+    if host in gitlab_hosts:
+        return "gitlab"
+    return "unknown"
+
+
+def _origin_url():
+    try:
+        return subprocess.check_output(
+            ["git", "remote", "get-url", "origin"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return ""
+
+
 def main(argv):
     if not argv:
         print("usage: start_work.py <provider|branch-name|config-get> ...", file=sys.stderr)
@@ -50,6 +75,10 @@ def main(argv):
         cfg = load_config(_default_config_path())
         val = _config_get(cfg, rest[0]) if rest else ""
         print(val if not isinstance(val, (dict, list)) else json.dumps(val))
+        return 0
+    if cmd == "provider":
+        cfg = load_config(_default_config_path())
+        print(provider_for_remote(_origin_url(), cfg.get("gitlabHosts", [])))
         return 0
     print(f"unknown subcommand: {cmd}", file=sys.stderr)
     return 2

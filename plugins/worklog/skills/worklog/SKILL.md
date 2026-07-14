@@ -31,7 +31,7 @@ missing, the helper says so — tell the user to set `worklog.vaultPath`, don't 
    "Shipped / In progress / Notes" structure. If the range is empty, say "nothing logged in
    <range>" — never invent activity.
 4. Write the draft to `<vaultPath>/<reportsDir>/Weekly-<YYYY>-W<ww>.md` for the user to edit.
-   Do not send or post it.
+   Do not send or post it. Professional register — do not use the personal `voice` skill, and do not include anything not present in the pulled entries.
 
 ## Performance review
 

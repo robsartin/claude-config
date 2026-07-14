@@ -83,6 +83,22 @@ The same plugins install in Cowork (desktop) too. See `MIGRATION.md` for the ful
 
 `wordpress-block-theme` ships one skill, `wordpress-block-theme`, for building a WordPress block (Full Site Editing / Gutenberg) theme that passes block validation on the first try. It's a content-and-tooling plugin: a canonical, self-validating starter theme under `plugins/wordpress-block-theme/assets/starter/`, plus reference guides (block-markup rules, dev/editor workflow, WordPress.com deploy) under `plugins/wordpress-block-theme/references/`. Static gates (`bin/check-all.sh`) run on plain `python3`; the live theme-check (`bin/theme-check.sh`) needs `@wordpress/env` running.
 
+## The kdp-publisher plugin
+
+`kdp-publisher` ships one skill, `kdp-publisher`, that turns a Google Doc (or exported `.docx`) manuscript into print-ready Amazon KDP files: a paperback interior PDF, a wraparound cover PDF, a cover-spec sheet, and a Kindle EPUB. Python-backed like `adr-toolkit` — run `${CLAUDE_PLUGIN_ROOT}/bin/install.sh` once to bootstrap its venv before the CLI works.
+
+## The plugin-sync plugin
+
+`plugin-sync` provides the `/plugin-sync:sync` command, which keeps this machine's installed plugins in step with the marketplace: it refreshes the catalog, installs anything new, updates everything installed, and reports plugins that have left the catalog (`--prune` uninstalls them; `--dry-run` previews). Command-only, backed by the bundled `sync-plugins.sh` (bash, no dependencies). See "Keeping plugins in sync" above.
+
+## The start-work plugin
+
+`start-work` ships one skill, `start-work`, that turns a ticket or idea into a tracked issue + a correctly-named branch, makes the linkage live, and hands off to brainstorming. Its helpers (`bin/start_work.py`) run directly on `python3` with no venv. It supports the GitHub path today (issue → branch, `ready` label); GitLab/Jira is a later adapter.
+
+## The worklog plugin
+
+`worklog` ships one skill plus three commands. `/log` captures work activity into a rolling Obsidian `Worklog.md`; `/weekly-report` and `/perf-review` draft a weekly status report or a performance-review narrative from it. Helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (never in this repo), and reports are drafts written into the vault, never sent.
+
 ## Adding more plugins later
 
 1. Create `plugins/<name>/` with a `.claude-plugin/plugin.json`.

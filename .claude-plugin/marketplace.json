@@ -29,6 +29,11 @@
       "name": "plugin-sync",
       "source": "./plugins/plugin-sync",
       "description": "Slash command to sync installed plugins with the claude-config marketplace."
+    },
+    {
+      "name": "start-work",
+      "source": "./plugins/start-work",
+      "description": "Turn a ticket or idea into a tracked issue + branch and hand off to planning."
     }
   ]
 }

@@ -1,0 +1,25 @@
+name: start-work
+
+on:
+  pull_request:
+    paths: ['plugins/start-work/**', '.github/workflows/start-work.yml']
+  push:
+    branches: [main]
+    paths: ['plugins/start-work/**', '.github/workflows/start-work.yml']
+
+defaults:
+  run:
+    working-directory: plugins/start-work
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Unit tests
+        run: python3 -m pytest tests -q

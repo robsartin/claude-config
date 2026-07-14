@@ -75,3 +75,20 @@ def test_append_backdated_date_sorts_newest_first():
     out = wl.append_entry(existing, "2026-07-13", "- **note** c")
     order = [l[3:] for l in out.splitlines() if l.startswith("## ")]
     assert order == ["2026-07-14", "2026-07-13", "2026-07-12"]
+
+
+def test_cmd_log_end_to_end_no_ref_prefix_collision(tmp_path, monkeypatch):
+    vault = tmp_path / "vault"; vault.mkdir()
+    cfgdir = tmp_path / "cfg"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+
+    assert wl.main(["log", "started", "First thing", "--ref", "PROJ-10", "--date", "2026-07-14"]) == 0
+    assert wl.main(["log", "started", "Second thing", "--ref", "PROJ-1", "--date", "2026-07-14"]) == 0
+    # same ref, same day -> idempotent
+    assert wl.main(["log", "started", "First thing", "--ref", "PROJ-10", "--date", "2026-07-14"]) == 0
+
+    text = (vault / "Worklog.md").read_text()
+    assert "PROJ-10 — First thing" in text                 # kept
+    assert "PROJ-1 — Second thing" in text                  # distinct ref NOT swallowed
+    assert text.count("PROJ-10 — First thing") == 1         # idempotent, no dup

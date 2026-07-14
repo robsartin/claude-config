@@ -51,5 +51,27 @@ def test_append_same_day_appends_within_section():
 def test_append_idempotent_on_dedup_key():
     existing = "## 2026-07-14\n- **started** PROJ-1 — X\n"
     out = wl.append_entry(existing, "2026-07-14", "- **started** PROJ-1 — X",
-                          dedup_key="**started** PROJ-1")
+                          dedup_key="**started** PROJ-1 —")
     assert out == existing  # unchanged
+
+
+def test_append_dedup_prefix_not_confused():
+    existing = "## 2026-07-14\n- **started** PROJ-10 — other\n"
+    out = wl.append_entry(existing, "2026-07-14", "- **started** PROJ-1 — new",
+                          dedup_key="**started** PROJ-1 —")
+    assert "PROJ-1 — new" in out          # distinct ref NOT swallowed
+    assert "PROJ-10 — other" in out
+
+
+def test_append_preserves_preamble():
+    existing = "# My Worklog\n\nintro line\n\n## 2026-07-13\n- **note** old\n"
+    out = wl.append_entry(existing, "2026-07-14", "- **note** new")
+    assert "# My Worklog" in out and "intro line" in out
+    assert out.index("2026-07-14") < out.index("2026-07-13")
+
+
+def test_append_backdated_date_sorts_newest_first():
+    existing = "## 2026-07-14\n- **note** a\n## 2026-07-12\n- **note** b\n"
+    out = wl.append_entry(existing, "2026-07-13", "- **note** c")
+    order = [l[3:] for l in out.splitlines() if l.startswith("## ")]
+    assert order == ["2026-07-14", "2026-07-13", "2026-07-12"]

@@ -42,20 +42,26 @@ def format_entry(type_, ref, text, meta=None):
 
 
 def _parse_days(content):
+    preamble = []
     days = []
     cur = None
     for line in content.splitlines():
         if line.startswith("## "):
             cur = [line[3:].strip(), []]
             days.append(cur)
-        elif cur is not None and line.strip():
-            cur[1].append(line)
-    return days
+        elif cur is not None:
+            if line.strip():
+                cur[1].append(line)
+        else:
+            preamble.append(line)
+    return preamble, days
 
 
-def _render_days(days):
-    out = []
-    for date, entries in days:
+def _render_days(preamble, days):
+    out = list(preamble)
+    if preamble and preamble[-1].strip():
+        out.append("")
+    for date, entries in sorted(days, key=lambda d: d[0], reverse=True):
         out.append(f"## {date}")
         out.extend(entries)
         out.append("")
@@ -63,7 +69,7 @@ def _render_days(days):
 
 
 def append_entry(content, date, entry_line, dedup_key=None):
-    days = _parse_days(content)
+    preamble, days = _parse_days(content)
     by_date = {d[0]: d for d in days}
     if date in by_date:
         entries = by_date[date][1]
@@ -71,8 +77,8 @@ def append_entry(content, date, entry_line, dedup_key=None):
             return content
         entries.append(entry_line)
     else:
-        days.insert(0, [date, [entry_line]])
-    return _render_days(days)
+        days.append([date, [entry_line]])
+    return _render_days(preamble, days)
 
 
 def main(argv):
@@ -98,7 +104,7 @@ def _cmd_log(rest):
     date = a.date or datetime.date.today().isoformat()
     meta = f"[branch: {a.branch}]" if a.branch else None
     line = format_entry(a.type, a.ref, a.text, meta)
-    dedup = f"**{a.type}** {a.ref}" if (a.ref and a.type != "note") else None
+    dedup = f"**{a.type}** {a.ref} —" if (a.ref and a.type != "note") else None
 
     cfg = load_config(_default_config_path())
     path = worklog_path(cfg)

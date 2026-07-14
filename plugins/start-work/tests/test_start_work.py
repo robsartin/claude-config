@@ -46,3 +46,15 @@ def test_provider_for_remote():
     assert sw.provider_for_remote("https://gitlab.corp.com/o/r.git",
                                   ["gitlab.corp.com"]) == "gitlab"
     assert sw.provider_for_remote("https://example.com/o/r.git", []) == "unknown"
+
+
+def test_slugify():
+    assert sw.slugify("Add API rate limiting") == "add-api-rate-limiting"
+    assert sw.slugify("Fix login redirect!") == "fix-login-redirect"
+    assert sw.slugify("  Multiple   spaces ") == "multiple-spaces"
+    assert sw.slugify("A" * 80).count("a") <= 50
+
+
+def test_branch_name():
+    assert sw.branch_name("PROJ-123", "Add API rate limiting") == "PROJ-123-add-api-rate-limiting"
+    assert sw.branch_name("42", "Fix login redirect!") == "42-fix-login-redirect"

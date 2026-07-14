@@ -57,6 +57,19 @@ def provider_for_remote(remote_url, gitlab_hosts):
     return "unknown"
 
 
+def slugify(title, max_len=50):
+    """Convert a title to a lowercase slug. Non-alphanumeric chars become hyphens."""
+    s = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    if len(s) > max_len:
+        s = s[:max_len].rstrip("-")
+    return s
+
+
+def branch_name(ref, title):
+    """Combine a reference (e.g., issue number) with a slugified title."""
+    return f"{ref}-{slugify(title)}"
+
+
 def _origin_url():
     try:
         return subprocess.check_output(
@@ -79,6 +92,12 @@ def main(argv):
     if cmd == "provider":
         cfg = load_config(_default_config_path())
         print(provider_for_remote(_origin_url(), cfg.get("gitlabHosts", [])))
+        return 0
+    if cmd == "branch-name":
+        if len(rest) < 2:
+            print("usage: branch-name <ref> <title...>", file=sys.stderr)
+            return 2
+        print(branch_name(rest[0], " ".join(rest[1:])))
         return 0
     print(f"unknown subcommand: {cmd}", file=sys.stderr)
     return 2

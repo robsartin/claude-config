@@ -21,6 +21,11 @@ plugins/wordpress-block-theme/      # the "wordpress-block-theme" plugin (conten
   skills/wordpress-block-theme/SKILL.md
   assets/starter/                   # canonical, self-validating block-theme starter
   references/                       # block-markup rules, dev/editor/deploy guides
+plugins/start-work/                 # the "start-work" plugin (Python-backed)
+  .claude-plugin/plugin.json
+  skills/start-work/SKILL.md
+  bin/start_work.py                 # issue + branch helpers, run on python3, no venv
+  commands/start-work.md
 ```
 
 ## The wordpress-block-theme skill
@@ -37,6 +42,10 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 - **Prefer vague quantifiers** ("several", "a shelf of") over invented precise numbers. Use exact figures only for things actually measured.
 - **Authorship**: robsartin.com posts from **July 2024 onward** are Rob's voice; **January–June 2024** posts were written by his wife Rachel and brother Hank during his hospitalization and are NOT his voice. Don't imitate them.
 - The SKILL.md also carries a dated timeline of Rob's medical/life history — use it so drafts get facts right.
+
+## The start-work skill
+
+`start-work` turns a ticket or idea into a tracked issue + branch and hands off to planning. Its helpers (`bin/start_work.py`) run directly on `python3`, no venv bootstrap needed; it only supports the GitHub path today, with GitLab/Jira as a later adapter.
 
 ## Maintaining this repo
 

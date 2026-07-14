@@ -2,6 +2,6 @@
   "name": "start-work",
   "description": "Turn a ticket or idea into a tracked issue + branch and hand off to planning.",
   "author": { "name": "Rob Sartin" },
-  "keywords": ["workflow", "github", "issues", "branch", "kickoff"],
+  "keywords": ["workflow", "github", "gitlab", "jira", "issues", "ticket", "branch", "kickoff"],
   "commands": ["./commands/start-work.md"]
 }

@@ -1,0 +1,26 @@
+name: shell
+
+on:
+  pull_request:
+    paths: ['bin/**', 'plugins/plugin-sync/**', '.github/workflows/shell.yml']
+  push:
+    branches: [main]
+    paths: ['bin/**', 'plugins/plugin-sync/**', '.github/workflows/shell.yml']
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Syntax check (bash -n)
+        run: |
+          for f in bin/*.sh plugins/plugin-sync/*.sh; do
+            echo "bash -n $f"
+            bash -n "$f"
+          done
+      - name: ShellCheck (error severity)
+        run: |
+          for f in bin/*.sh plugins/plugin-sync/*.sh; do
+            echo "shellcheck $f"
+            shellcheck --severity=error "$f"
+          done

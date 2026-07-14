@@ -79,6 +79,28 @@ def _origin_url():
         return ""
 
 
+def parse_jira_issue(raw):
+    """Extract the fields the adapter needs from `jira issue view <KEY> --raw` JSON.
+    `raw` is a dict or a JSON string. The branch slug comes from `summary` because
+    Jira `description` is ADF (structured), not plain text."""
+    d = raw if isinstance(raw, dict) else json.loads(raw)
+    f = d.get("fields") or {}
+    a = f.get("assignee") or {}
+    return {
+        "key": d.get("key", "") or "",
+        "summary": f.get("summary", "") or "",
+        "status": (f.get("status") or {}).get("name", "") or "",
+        "project": (f.get("project") or {}).get("key", "") or "",
+        "assignee": a.get("displayName") or a.get("emailAddress") or None,
+    }
+
+
+def _jira_item(key):
+    """Run `jira issue view <key> --raw` and return the parsed fields."""
+    out = subprocess.check_output(["jira", "issue", "view", key, "--raw"], text=True)
+    return parse_jira_issue(out)
+
+
 def main(argv):
     if not argv:
         print("usage: start_work.py <provider|branch-name|config-get> ...", file=sys.stderr)
@@ -98,6 +120,12 @@ def main(argv):
             print("usage: branch-name <ref> <title...>", file=sys.stderr)
             return 2
         print(branch_name(rest[0], " ".join(rest[1:])))
+        return 0
+    if cmd == "jira-item":
+        if not rest:
+            print("usage: jira-item <KEY>", file=sys.stderr)
+            return 2
+        print(json.dumps(_jira_item(rest[0])))
         return 0
     print(f"unknown subcommand: {cmd}", file=sys.stderr)
     return 2

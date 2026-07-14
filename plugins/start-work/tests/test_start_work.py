@@ -58,3 +58,47 @@ def test_slugify():
 def test_branch_name():
     assert sw.branch_name("PROJ-123", "Add API rate limiting") == "PROJ-123-add-api-rate-limiting"
     assert sw.branch_name("42", "Fix login redirect!") == "42-fix-login-redirect"
+
+
+# Synthetic fixture shaped like `jira issue view <KEY> --raw` (Jira REST issue).
+JIRA_RAW = {
+    "key": "PROJ-42",
+    "fields": {
+        "summary": "Add API rate limiting",
+        "status": {"name": "To Do", "statusCategory": {"key": "new"}},
+        "project": {"key": "PROJ", "name": "Example"},
+        "assignee": None,
+    },
+}
+
+
+def test_parse_jira_issue_unassigned():
+    assert sw.parse_jira_issue(JIRA_RAW) == {
+        "key": "PROJ-42",
+        "summary": "Add API rate limiting",
+        "status": "To Do",
+        "project": "PROJ",
+        "assignee": None,
+    }
+
+
+def test_parse_jira_issue_assigned_prefers_display_name():
+    raw = {
+        "key": "PROJ-7",
+        "fields": {
+            "summary": "Fix bug",
+            "status": {"name": "In Progress"},
+            "project": {"key": "PROJ"},
+            "assignee": {"displayName": "Ada L", "emailAddress": "ada@example.com"},
+        },
+    }
+    assert sw.parse_jira_issue(raw)["assignee"] == "Ada L"
+
+
+def test_parse_jira_issue_accepts_json_string():
+    assert sw.parse_jira_issue(json.dumps(JIRA_RAW))["key"] == "PROJ-42"
+
+
+def test_parse_jira_issue_branch_name_from_summary():
+    item = sw.parse_jira_issue(JIRA_RAW)
+    assert sw.branch_name(item["key"], item["summary"]) == "PROJ-42-add-api-rate-limiting"

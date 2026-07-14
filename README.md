@@ -37,7 +37,8 @@ claude-config/
 │   │   └── references/            # block-markup rules, dev/editor/deploy guides
 │   ├── kdp-publisher/             # Google Doc → KDP interior/cover/spec/EPUB (Python)
 │   ├── plugin-sync/               # the /plugin-sync:sync command + sync-plugins.sh
-│   └── start-work/                # ticket/idea → tracked issue + branch (Python-backed, GitHub only for now)
+│   ├── start-work/                # ticket/idea → tracked issue + branch (Python-backed, GitHub only for now)
+│   └── worklog/                   # work activity → Obsidian Worklog.md + weekly/perf report drafts (Python-backed)
 ├── bin/
 │   └── bootstrap.sh              # one-shot new-machine setup
 ├── MIGRATION.md                  # how to create the repo, install, and update
@@ -65,7 +66,7 @@ Once `plugin-sync` is installed, run `/plugin-sync:sync` in any session to insta
 
 ```bash
 /plugin marketplace add robsartin/claude-config       # once per machine
-/plugin install <name>@claude-config                  # voice · adr-toolkit · wordpress-block-theme · kdp-publisher · plugin-sync · start-work
+/plugin install <name>@claude-config                  # voice · adr-toolkit · wordpress-block-theme · kdp-publisher · plugin-sync · start-work · worklog
 ```
 
 The same plugins install in Cowork (desktop) too. See `MIGRATION.md` for the full setup, update workflow, and how web projects fit in.

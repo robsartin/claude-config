@@ -26,6 +26,11 @@ plugins/start-work/                 # the "start-work" plugin (Python-backed)
   skills/start-work/SKILL.md
   bin/start_work.py                 # issue + branch helpers, run on python3, no venv
   commands/start-work.md
+plugins/worklog/                    # the "worklog" plugin (Python-backed)
+  .claude-plugin/plugin.json
+  skills/worklog/SKILL.md
+  bin/worklog.py                    # log + report helpers, run on python3, no venv
+  commands/log.md, commands/weekly-report.md, commands/perf-review.md
 ```
 
 ## The wordpress-block-theme skill
@@ -46,6 +51,10 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 ## The start-work skill
 
 `start-work` turns a ticket or idea into a tracked issue + branch and hands off to planning. Its helpers (`bin/start_work.py`) run directly on `python3`, no venv bootstrap needed; it only supports the GitHub path today, with GitLab/Jira as a later adapter.
+
+## The worklog skill
+
+`worklog` captures work activity into a rolling Obsidian `Worklog.md` and drafts weekly status reports or performance-review narratives from it. Its helpers (`bin/worklog.py`) run directly on `python3`, no venv bootstrap needed; the vault path is machine-local config, not part of this repo.
 
 ## Maintaining this repo
 

@@ -34,6 +34,11 @@
       "name": "start-work",
       "source": "./plugins/start-work",
       "description": "Turn a ticket or idea into a tracked issue + branch and hand off to planning."
+    },
+    {
+      "name": "worklog",
+      "source": "./plugins/worklog",
+      "description": "Capture work activity into an Obsidian Worklog.md and draft weekly/perf reports."
     }
   ]
 }

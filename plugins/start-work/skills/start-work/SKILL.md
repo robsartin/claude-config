@@ -111,3 +111,26 @@ number or the Jira key). Otherwise say "worklog not configured — skipping" and
 Record the item + branch (a one-line note is enough), then invoke `superpowers:brainstorming`
 to start the design. If the item is already a crisp, fully-specified task, offer to jump
 straight to `superpowers:writing-plans` instead.
+
+## 7. Open the draft PR/MR (later — at the first push)
+
+Kickoff deliberately skips this (both hosts need a commit first). Once there's a first commit,
+`/start-work:draft-mr` runs these steps. Push the branch if it has no upstream yet:
+
+```bash
+git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1 || git push -u origin HEAD
+```
+
+Then open the draft, by provider:
+
+```bash
+# GitHub
+gh pr create --draft --fill
+# GitLab
+glab mr create --draft --fill --yes
+```
+
+Report the resulting URL. The branch name already carries the ref (`<KEY>-slug` or `<n>-slug`),
+which both hosts use to associate the change with the ticket/issue — add `Closes #<n>` (GitHub)
+or the Jira key in the description if you want the linkage spelled out. If your `glab` version
+rejects a flag or prompts anyway, drop `--yes` and answer interactively.

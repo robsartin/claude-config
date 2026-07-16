@@ -29,13 +29,19 @@ catches work that never got hand-logged. Skip silently if the tools aren't avail
 reports still work from `Worklog.md` alone.
 
 ```bash
-# Jira tickets you touched in the range (use a plain date, not -14d, to avoid flag parsing):
+# Jira tickets you touched in the range (use a plain date, not -14d, which parses as flags).
+# Scoped to your Jira config's default project; for cross-project use --jql instead.
 jira issue list -a"$(jira me)" --updated-after <SINCE> --raw \
   | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-jira
-# GitLab MRs you merged in the range (cross-project):
+# GitLab MRs you merged in the range, across projects on your work GitLab host.
+# glab must be authed to that host (its default). For a self-hosted instance, either make it
+# glab's default host or add `--hostname <your-gitlab-host>` to the call.
 glab api "/merge_requests?scope=created_by_me&state=merged&updated_after=<SINCE>T00:00:00Z&per_page=100" \
   | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-gitlab
 ```
+
+Cross-project Jira alternative:
+`jira issue list --jql "assignee = currentUser() AND updated >= '<SINCE>'" --raw | … parse-jira`.
 
 Both emit normalized `{date, type: "shipped", ref, text}` entries. If a `ref` from the pull
 already appears in the hand-logged entries, prefer the hand-logged one (it has your context) and

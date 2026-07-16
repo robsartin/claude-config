@@ -91,8 +91,8 @@ cat > ~/.claude/start-work.json <<'JSON'
   "jira": {
     "baseUrl": "https://<your-org>.atlassian.net",
     "defaultProject": "<PROJ>",
-    "readyStatus": "<the status that means ready-for-dev>",
-    "inProgressStatus": "In Progress"
+    "inProgressStatus": "In Progress",
+    "issueType": "Task"
   },
   "branchTemplate": "{key}-{slug}",
   "repoProjectMap": {},

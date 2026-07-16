@@ -57,11 +57,14 @@ summary first):
 ```bash
 proj=$(python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" config-get jira.defaultProject)
 [ -n "$proj" ] || { echo "Set jira.defaultProject in ~/.claude/start-work.json first"; exit 1; }
-jira issue create -p"$proj" -tTask -s"<summary>"      # capture the new key from the output
+type=$(python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" config-get jira.issueType); [ -n "$type" ] || type=Task
+jira issue create -p"$proj" -t"$type" -s"<summary>"
 ```
 
-The **ref** is the Jira key; the **title** is the `summary` (Jira `description` is ADF, not plain
-text, so never slug from it).
+`jira issue create` prints a browse URL (`…/browse/<KEY>`) — the **ref** is that URL's last path
+segment (the key). The **title** is the `summary` (Jira `description` is ADF, not plain text, so
+never slug from it). Issue **type** is project-dependent; it defaults to `Task` — set
+`jira.issueType` in config if your project uses a different type.
 
 ## 3. Branch (both providers)
 

@@ -99,7 +99,7 @@ Once `plugin-sync` is installed, run `/plugin-sync:sync` in any session to insta
 
 ## The worklog plugin
 
-`worklog` ships one skill plus three commands. `/log` captures work activity into a rolling Obsidian `Worklog.md`; `/weekly-report` and `/perf-review` draft a weekly status report or a performance-review narrative from it. Helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (never in this repo), and reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports can augment your hand-logged notes with a **factual pull** — tickets resolved and MRs merged in the range.
+`worklog` ships one skill plus three commands. `/worklog:log` captures work activity into a rolling Obsidian `Worklog.md`; `/worklog:weekly-report` and `/worklog:perf-review` draft a weekly status report or a performance-review narrative from it. Helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (never in this repo), and reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports can augment your hand-logged notes with a **factual pull** — tickets resolved and MRs merged in the range.
 
 ## Adding more plugins later
 

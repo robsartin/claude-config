@@ -56,7 +56,7 @@ Gate, push, and put the PR/MR up for review. Stops there; merging is step 9.
 ```bash
 base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null) && base=${base#origin/} || base=main
 [ "$(git branch --show-current)" != "$base" ] || { echo "On $base — nothing to finish."; exit 1; }
-git diff --quiet && git diff --cached --quiet || { echo "Working tree is dirty — commit first."; exit 1; }
+[ -z "$(git status --porcelain)" ] || { echo "Working tree is dirty (including untracked files) — commit or stash first."; exit 1; }
 ```
 
 Never auto-commit on the user's behalf.
@@ -88,9 +88,9 @@ Then, by provider (`python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" provider`)
 
 ```bash
 # GitHub — create if absent, else un-draft an existing one
-gh pr view --json number >/dev/null 2>&1 && gh pr ready || gh pr create --fill
+if gh pr view --json number >/dev/null 2>&1; then gh pr ready; else gh pr create --fill; fi
 # GitLab
-glab mr view >/dev/null 2>&1 && glab mr update --ready || glab mr create --fill --yes
+if glab mr view >/dev/null 2>&1; then glab mr update --ready; else glab mr create --fill --yes; fi
 ```
 
 Make sure the body carries the linkage — `Closes #<n>` on GitHub, the Jira key on GitLab. Report

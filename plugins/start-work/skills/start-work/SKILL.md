@@ -134,3 +134,103 @@ Report the resulting URL. The branch name already carries the ref (`<KEY>-slug` 
 which both hosts use to associate the change with the ticket/issue — add `Closes #<n>` (GitHub)
 or the Jira key in the description if you want the linkage spelled out. If your `glab` version
 rejects a flag or prompts anyway, drop `--yes` and answer interactively.
+
+## 8. Finish the work — `/start-work:finish` (prep)
+
+Gate, push, and put the PR/MR up for review. Stops there; merging is step 9.
+
+**Preconditions — check first, and stop if either fails:**
+
+```bash
+base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null) && base=${base#origin/} || base=main
+[ "$(git branch --show-current)" != "$base" ] || { echo "On $base — nothing to finish."; exit 1; }
+git diff --quiet && git diff --cached --quiet || { echo "Working tree is dirty — commit first."; exit 1; }
+```
+
+Never auto-commit on the user's behalf.
+
+### Replay the repo's CI gate
+
+Read the repo's CI config — prefer `.github/workflows/*.yml`, else `.gitlab-ci.yml` — and run it
+locally as faithfully as is honest:
+
+- If a workflow is **path-scoped**, only run it when this branch's diff touches those paths
+  (`git diff --name-only "$base"...HEAD`).
+- Run the steps that genuinely run here: test suites, linters, formatters, type checks.
+- **Skip** anything needing infrastructure this machine lacks — Docker/services, matrix
+  expansions, deploys/publishes, steps needing CI secrets.
+- **Always list what you skipped.** A skipped step must never be reported as a passed one. Say
+  "the part of the gate I could run passed", not "the gate passed", whenever anything was skipped.
+- If there is **no** CI config, say so and ask before continuing rather than pushing ungated.
+
+**If any step fails, stop — do not push.** Report which step failed and its output.
+
+### Push and put the PR/MR up
+
+```bash
+git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1 || git push -u origin HEAD
+git push
+```
+
+Then, by provider (`python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" provider`):
+
+```bash
+# GitHub — create if absent, else un-draft an existing one
+gh pr view --json number >/dev/null 2>&1 && gh pr ready || gh pr create --fill
+# GitLab
+glab mr view >/dev/null 2>&1 && glab mr update --ready || glab mr create --fill --yes
+```
+
+Make sure the body carries the linkage — `Closes #<n>` on GitHub, the Jira key on GitLab. Report
+the PR/MR URL.
+
+**Stop here.** Do not change the ticket and do not write a worklog entry — those happen at merge,
+so that "shipped" keeps meaning *merged*.
+
+## 9. Merge it — `/start-work:merge`
+
+**Verify before merging — stop if anything is off:**
+
+```bash
+# GitHub
+gh pr view --json state,mergeable,mergeStateStatus,statusCheckRollup
+# GitLab
+glab mr view
+```
+
+Require: the PR/MR exists, its checks are **green** (not pending), and it is **mergeable** (no
+conflicts). If checks are red or still running, or there are conflicts, report and stop —
+conflicts are the user's to resolve. If it is **already merged**, say so and skip ahead to the
+worklog and ticket steps (so an interrupted run finishes cleanly).
+
+**Merge and clean up:**
+
+```bash
+# GitHub
+gh pr merge --squash --delete-branch
+# GitLab
+glab mr merge --squash --remove-source-branch
+```
+
+Then return to the default branch:
+
+```bash
+base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null) && base=${base#origin/} || base=main
+git checkout "$base" -q && git pull -q
+```
+
+**Log what shipped** (graceful seam — skip silently if `worklog` isn't installed): log
+`shipped <ref> "<title>"`, where ref is the GitHub issue number or the Jira key. This is what gives
+weekly reports a record of shipped work.
+
+**Move the ticket:**
+
+- GitHub — the issue closes automatically via `Closes #<n>`. Verify and report; don't act.
+- GitLab/Jira — transition if a done status is configured:
+
+```bash
+done=$(python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" config-get jira.doneStatus)
+[ -n "$done" ] && jira issue move <KEY> "$done"   # skip silently when unset
+```
+
+Report what merged, what was logged, and the ticket's final state.

@@ -37,11 +37,10 @@ claude-config/
 │   │   └── references/            # block-markup rules, dev/editor/deploy guides
 │   ├── kdp-publisher/             # Google Doc → KDP interior/cover/spec/EPUB (Python)
 │   ├── plugin-sync/               # the /plugin-sync:sync command + sync-plugins.sh
-│   ├── start-work/                # ticket/idea → tracked issue + branch (Python-backed, GitHub only for now)
+│   ├── start-work/                # ticket/idea → tracked issue + branch, GitHub or GitLab/Jira (Python-backed)
 │   └── worklog/                   # work activity → Obsidian Worklog.md + weekly/perf report drafts (Python-backed)
 ├── bin/
 │   └── bootstrap.sh              # one-shot new-machine setup
-├── MIGRATION.md                  # how to create the repo, install, and update
 └── README.md
 ```
 
@@ -69,7 +68,10 @@ Once `plugin-sync` is installed, run `/plugin-sync:sync` in any session to insta
 /plugin install <name>@claude-config                  # voice · adr-toolkit · wordpress-block-theme · kdp-publisher · plugin-sync · start-work · worklog
 ```
 
-The same plugins install in Cowork (desktop) too. See `MIGRATION.md` for the full setup, update workflow, and how web projects fit in.
+## Other surfaces
+
+- **Cowork (desktop)** — the same plugins install; add the marketplace and install from the desktop app's plugin interface. Cowork-specific state (project memory, connected folders) stays local and isn't deployed from this repo.
+- **Web projects (claude.ai)** — can't install plugins. This repo stays the source of truth: paste the body of `plugins/voice/skills/writing-in-robs-voice/SKILL.md` (below the frontmatter) into the project's custom instructions when it changes.
 
 ## The voice plugin
 
@@ -93,11 +95,11 @@ The same plugins install in Cowork (desktop) too. See `MIGRATION.md` for the ful
 
 ## The start-work plugin
 
-`start-work` ships one skill, `start-work`, that turns a ticket or idea into a tracked issue + a correctly-named branch, makes the linkage live, and hands off to brainstorming. Its helpers (`bin/start_work.py`) run directly on `python3` with no venv. It supports the GitHub path today (issue → branch, `ready` label); GitLab/Jira is a later adapter.
+`start-work` ships one skill plus two commands. It turns a ticket or idea into a tracked issue/ticket + a correctly-named branch, makes the linkage live, and hands off to brainstorming. Helpers (`bin/start_work.py`) run directly on `python3` with no venv. It adapts to the repo's host: **GitHub** via `gh` (issue → branch, `ready` label) or **GitLab/Jira** via `glab` + `jira` (ticket → branch, assign + transition), driven by machine-local config. `/start-work:draft-mr` opens the draft PR/MR at your first push.
 
 ## The worklog plugin
 
-`worklog` ships one skill plus three commands. `/log` captures work activity into a rolling Obsidian `Worklog.md`; `/weekly-report` and `/perf-review` draft a weekly status report or a performance-review narrative from it. Helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (never in this repo), and reports are drafts written into the vault, never sent.
+`worklog` ships one skill plus three commands. `/log` captures work activity into a rolling Obsidian `Worklog.md`; `/weekly-report` and `/perf-review` draft a weekly status report or a performance-review narrative from it. Helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (never in this repo), and reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports can augment your hand-logged notes with a **factual pull** — tickets resolved and MRs merged in the range.
 
 ## Adding more plugins later
 

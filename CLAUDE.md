@@ -35,7 +35,7 @@ plugins/start-work/                 # "start-work" — Python-backed (python3, n
   .claude-plugin/plugin.json
   skills/start-work/SKILL.md
   bin/start_work.py                 # issue/ticket + branch helpers (gh, or glab+jira)
-  commands/start-work.md, draft-mr.md
+  commands/start-work.md, draft-mr.md, finish.md, merge.md
 plugins/worklog/                    # "worklog" — Python-backed (python3, no venv)
   .claude-plugin/plugin.json
   skills/worklog/SKILL.md
@@ -78,7 +78,7 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 
 ### start-work
 
-`start-work` turns a ticket or idea into a tracked issue/ticket + a correctly-named branch, makes the linkage live, and hands off to `superpowers:brainstorming`. Its helpers (`bin/start_work.py`) run directly on `python3`, no venv bootstrap needed. It adapts to the repo's host: **GitHub** via `gh` (issue → branch, `ready` label) or **GitLab/Jira** via `glab` + `jira` (ticket → branch, assign + transition to `jira.inProgressStatus`), driven by machine-local config. `/start-work:draft-mr` opens the draft PR/MR at your first push (the kickoff defers it — both hosts need a commit first). Its worklog integration is a graceful no-op when `worklog` isn't present.
+`start-work` turns a ticket or idea into a tracked issue/ticket + a correctly-named branch, makes the linkage live, and hands off to `superpowers:brainstorming`. Its helpers (`bin/start_work.py`) run directly on `python3`, no venv bootstrap needed. It adapts to the repo's host: **GitHub** via `gh` (issue → branch, `ready` label) or **GitLab/Jira** via `glab` + `jira` (ticket → branch, assign + transition to `jira.inProgressStatus`), driven by machine-local config. `/start-work:draft-mr` opens the draft PR/MR at your first push (the kickoff defers it — both hosts need a commit first). `/start-work:finish` replays the repo's CI gate, pushes, and puts the PR/MR up for review; `/start-work:merge` then verifies checks are green, squash-merges, logs a `shipped` worklog entry, and transitions the ticket. Its worklog integration is a graceful no-op when `worklog` isn't present.
 
 ### worklog
 

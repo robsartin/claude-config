@@ -1,6 +1,6 @@
 ---
 description: Open a draft PR (GitHub) or draft MR (GitLab) for the current start-work branch
-allowed-tools: Bash
+allowed-tools: Bash, Skill
 ---
 
 Invoke the `start-work` skill's "Open the draft PR/MR" step for the **current branch**.

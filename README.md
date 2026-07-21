@@ -95,7 +95,7 @@ Once `plugin-sync` is installed, run `/plugin-sync:sync` in any session to insta
 
 ## The start-work plugin
 
-`start-work` ships one skill plus two commands. It turns a ticket or idea into a tracked issue/ticket + a correctly-named branch, makes the linkage live, and hands off to brainstorming. Helpers (`bin/start_work.py`) run directly on `python3` with no venv. It adapts to the repo's host: **GitHub** via `gh` (issue → branch, `ready` label) or **GitLab/Jira** via `glab` + `jira` (ticket → branch, assign + transition), driven by machine-local config. `/start-work:draft-mr` opens the draft PR/MR at your first push.
+`start-work` ships one skill plus four commands. It turns a ticket or idea into a tracked issue/ticket + a correctly-named branch, makes the linkage live, and hands off to brainstorming. Helpers (`bin/start_work.py`) run directly on `python3` with no venv. It adapts to the repo's host: **GitHub** via `gh` (issue → branch, `ready` label) or **GitLab/Jira** via `glab` + `jira` (ticket → branch, assign + transition), driven by machine-local config. `/start-work:draft-mr` opens the draft PR/MR at your first push. `/start-work:finish` replays the repo's CI gate, pushes, and puts the PR/MR up for review; `/start-work:merge` then verifies checks are green, squash-merges, logs a `shipped` worklog entry, and transitions the ticket.
 
 ## The worklog plugin
 

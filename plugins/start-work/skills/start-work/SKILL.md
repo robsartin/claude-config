@@ -10,8 +10,8 @@ design itself — it ends by invoking `superpowers:brainstorming`.
 
 Helpers (deterministic bits) live at `${CLAUDE_PLUGIN_ROOT}/bin/start_work.py`, run with
 `python3`. Config (machine-local) is `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/start-work.json` — it
-holds `gitlabHosts` and a `jira` section (`defaultProject`, `inProgressStatus`) for work repos;
-nothing work-specific is baked into this skill.
+holds `gitlabHosts` and a `jira` section (`defaultProject`, `inProgressStatus`, `doneStatus`) for
+work repos; nothing work-specific is baked into this skill.
 
 ## 1. Detect the provider
 
@@ -103,8 +103,9 @@ If the user asked not to change the ticket's status, skip the `jira issue move` 
 
 Record a "started" entry **if** the `worklog` plugin is available; if it isn't, skip silently —
 start-work never depends on it. If a `/worklog:log` command exists (or the worklog plugin is
-installed), log the start as `started <ref> "<title>" [branch: $name]` (ref = the GitHub issue
-number or the Jira key). Otherwise say "worklog not configured — skipping" and move on.
+installed), log the start as `started "<title>" --ref <ref> --branch "$name"` (ref = the GitHub
+issue number or the Jira key — `--ref` is a structured field the reports join against, so it must
+never be folded into the text). Otherwise say "worklog not configured — skipping" and move on.
 
 ## 6. Set up the workspace and hand off
 
@@ -155,12 +156,15 @@ Read the repo's CI config — prefer `.github/workflows/*.yml`, else `.gitlab-ci
 locally as faithfully as is honest:
 
 - If a workflow is **path-scoped**, only run it when this branch's diff touches those paths
-  (`git diff --name-only "$base"...HEAD`).
+  (`git diff --name-only "origin/$base"...HEAD`).
 - Run the steps that genuinely run here: test suites, linters, formatters, type checks.
 - **Skip** anything needing infrastructure this machine lacks — Docker/services, matrix
   expansions, deploys/publishes, steps needing CI secrets.
 - **Always list what you skipped.** A skipped step must never be reported as a passed one. Say
   "the part of the gate I could run passed", not "the gate passed", whenever anything was skipped.
+  This includes **which workflows applied and which were excluded by path scoping** — if nothing
+  ran because no workflow matched the diff, say that explicitly; it must never read as "the gate
+  passed".
 - If there is **no** CI config, say so and ask before continuing rather than pushing ungated.
 
 **If any step fails, stop — do not push.** Report which step failed and its output.
@@ -175,8 +179,8 @@ git push
 Then, by provider (`python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" provider`):
 
 ```bash
-# GitHub — create if absent, else un-draft an existing one
-if gh pr view --json number >/dev/null 2>&1; then gh pr ready; else gh pr create --fill; fi
+# GitHub — create if absent (or if a prior PR was closed/merged), else un-draft the open one
+if [ -n "$(gh pr view --json number,state --jq 'select(.state=="OPEN") | .number' 2>/dev/null)" ]; then gh pr ready; else gh pr create --fill; fi
 # GitLab
 if glab mr view >/dev/null 2>&1; then glab mr update --ready; else glab mr create --fill --yes; fi
 ```
@@ -203,6 +207,19 @@ conflicts). If checks are red or still running, or there are conflicts, report a
 conflicts are the user's to resolve. If it is **already merged**, say so and skip ahead to the
 worklog and ticket steps (so an interrupted run finishes cleanly).
 
+**Capture the ref before merging.** The branch name is the only place it lives, and
+`--delete-branch`/`--remove-source-branch` remove it — do this before the merge step, not after:
+
+```bash
+# Capture the ref BEFORE merging — the branch name is the only place it lives, and
+# --delete-branch removes it. Branch names are <ref>-<slug>.
+ref=$(git branch --show-current | sed -E 's/^([A-Za-z]+-[0-9]+|[0-9]+)-.*/\1/')
+```
+
+That yields `42` from `42-slug` and `PROJ-123` from `PROJ-123-slug`. If the branch is already gone
+or the ref can't be derived (the already-merged path can land here), ask the user for the issue
+number / Jira key rather than guessing.
+
 **Merge and clean up:**
 
 ```bash
@@ -212,16 +229,8 @@ gh pr merge --squash --delete-branch
 glab mr merge --squash --remove-source-branch
 ```
 
-Then return to the default branch:
-
-```bash
-base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null) && base=${base#origin/} || base=main
-git checkout "$base" -q && git pull -q
-```
-
 **Log what shipped** (graceful seam — skip silently if `worklog` isn't installed): log
-`shipped <ref> "<title>"`, where ref is the GitHub issue number or the Jira key. This is what gives
-weekly reports a record of shipped work.
+`shipped "<title>" --ref "$ref"`. This is what gives weekly reports a record of shipped work.
 
 **Move the ticket:**
 
@@ -229,8 +238,15 @@ weekly reports a record of shipped work.
 - GitLab/Jira — transition if a done status is configured:
 
 ```bash
-done=$(python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" config-get jira.doneStatus)
-[ -n "$done" ] && jira issue move <KEY> "$done"   # skip silently when unset
+done_status=$(python3 "${CLAUDE_PLUGIN_ROOT}/bin/start_work.py" config-get jira.doneStatus)
+if [ -n "$done_status" ]; then jira issue move "$ref" "$done_status"; fi
+```
+
+**Return to the default branch** (runs on both paths — normal merge and already-merged):
+
+```bash
+base=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null) && base=${base#origin/} || base=main
+if [ -n "$(git status --porcelain)" ]; then echo "note: working tree dirty — staying put"; else git checkout "$base" -q && git pull -q; fi
 ```
 
 Report what merged, what was logged, and the ticket's final state.

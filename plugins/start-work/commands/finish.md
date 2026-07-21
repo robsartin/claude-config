@@ -1,6 +1,6 @@
 ---
 description: Gate, push, and put the current branch's PR/MR up for review
-allowed-tools: Bash
+allowed-tools: Bash, Skill
 ---
 
 Invoke the `start-work` skill's "Finish the work" step (section 8) for the **current branch**.

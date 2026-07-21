@@ -1,6 +1,6 @@
 ---
 description: Squash-merge the current PR/MR, log what shipped, and close out the ticket
-allowed-tools: Bash
+allowed-tools: Bash, Skill
 ---
 
 Invoke the `start-work` skill's "Merge it" step (section 9) for the **current branch**.

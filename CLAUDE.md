@@ -34,8 +34,8 @@ plugins/plugin-sync/                # "plugin-sync" — command-only (bash)
 plugins/start-work/                 # "start-work" — Python-backed (python3, no venv)
   .claude-plugin/plugin.json
   skills/start-work/SKILL.md
-  bin/start_work.py                 # issue + branch helpers
-  commands/start-work.md
+  bin/start_work.py                 # issue/ticket + branch helpers (gh, or glab+jira)
+  commands/start-work.md, draft-mr.md
 plugins/worklog/                    # "worklog" — Python-backed (python3, no venv)
   .claude-plugin/plugin.json
   skills/worklog/SKILL.md
@@ -78,11 +78,11 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 
 ### start-work
 
-`start-work` turns a ticket or idea into a tracked issue + a correctly-named branch, makes the linkage live, and hands off to `superpowers:brainstorming`. Its helpers (`bin/start_work.py`) run directly on `python3`, no venv bootstrap needed. It supports the GitHub path today (issue → branch, `ready` label); GitLab/Jira is a later adapter, and its worklog integration is a graceful no-op until `worklog` is present.
+`start-work` turns a ticket or idea into a tracked issue/ticket + a correctly-named branch, makes the linkage live, and hands off to `superpowers:brainstorming`. Its helpers (`bin/start_work.py`) run directly on `python3`, no venv bootstrap needed. It adapts to the repo's host: **GitHub** via `gh` (issue → branch, `ready` label) or **GitLab/Jira** via `glab` + `jira` (ticket → branch, assign + transition to `jira.inProgressStatus`), driven by machine-local config. `/start-work:draft-mr` opens the draft PR/MR at your first push (the kickoff defers it — both hosts need a commit first). Its worklog integration is a graceful no-op when `worklog` isn't present.
 
 ### worklog
 
-`worklog` captures work activity into a rolling Obsidian `Worklog.md` (via `/log`) and drafts weekly status reports (`/weekly-report`) or performance-review narratives (`/perf-review`) from it. Its helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (the `worklog` section of `~/.claude/start-work.json`), never part of this repo; reports are drafts written into the vault, never sent.
+`worklog` captures work activity into a rolling Obsidian `Worklog.md` (via `/log`) and drafts weekly status reports (`/weekly-report`) or performance-review narratives (`/perf-review`) from it. Its helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (the `worklog` section of `~/.claude/start-work.json`), never part of this repo; reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports augment the hand-logged notes with a **factual pull** (tickets resolved + MRs merged in range).
 
 ## Plugin conventions
 

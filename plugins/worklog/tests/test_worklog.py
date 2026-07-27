@@ -283,3 +283,43 @@ def test_count_events():
     assert wl.count_events(content, "help", "2026-07-13", "2026-07-14") == 1
     assert wl.count_events(content, "help", "2026-07-01", "2026-07-14") == 2
     assert wl.count_events(content, "shipped", "2026-07-13", "2026-07-14") == 1
+
+
+def test_cmd_metric_end_to_end_upsert(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+
+    assert wl.main(["metric", "focus-hours", "4.5", "--date", "2026-07-14"]) == 0
+    assert wl.main(["metric", "focus-hours", "6.0", "--date", "2026-07-14"]) == 0   # upsert
+    assert wl.main(["metric", "energy", "4", "--date", "2026-07-14"]) == 0
+    text = (vault / "Metrics.md").read_text()
+    assert text.count("focus-hours") == 1
+    assert "- focus-hours: 6" in text and "4.5" not in text   # upsert replaced old value
+    assert "- energy: 4\n" in text                             # integral value stored bare, not 4.0
+
+
+def test_cmd_metric_rejects_non_numeric(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    assert wl.main(["metric", "focus-hours", "lots"]) != 0
+    assert not (vault / "Metrics.md").exists()
+
+
+def test_cmd_metrics_report_json(tmp_path, monkeypatch, capsys):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    (vault / "Metrics.md").write_text("## 2026-07-14\n- focus-hours: 4.5\n")
+    (vault / "Worklog.md").write_text("## 2026-07-14\n- **help** X\n- **shipped** Y\n")
+
+    assert wl.main(["metrics", "--since", "2026-07-13", "--until", "2026-07-14"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["metrics"]["focus-hours"]["summary"]["latest"] == 4.5
+    assert out["metrics"]["focus-hours"]["sparkline"] == "▄"
+    assert out["derived"]["help-count"] == 1
+    assert out["derived"]["prs-merged"] == 1

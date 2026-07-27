@@ -39,8 +39,8 @@ plugins/start-work/                 # "start-work" — Python-backed (python3, n
 plugins/worklog/                    # "worklog" — Python-backed (python3, no venv)
   .claude-plugin/plugin.json
   skills/worklog/SKILL.md
-  bin/worklog.py                    # log + report helpers
-  commands/log.md, weekly-report.md, perf-review.md
+  bin/worklog.py                    # log + report + metrics helpers
+  commands/log.md, weekly-report.md, perf-review.md, metric.md
 bin/bootstrap.sh                    # one-shot new-machine setup (see README)
 .github/workflows/                  # per-plugin path-scoped CI
 ```

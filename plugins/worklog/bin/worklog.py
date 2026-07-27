@@ -190,6 +190,52 @@ def main(argv):
     return 2
 
 
+_METRIC_RE = re.compile(r"- ([\w-]+):\s*(-?\d+(?:\.\d+)?)\s*$")
+
+
+def upsert_metric(content, date, name, value):
+    """Insert-or-replace `- <name>: <value>` under the `## <date>` heading,
+    newest day on top. Same name + same day replaces the value."""
+    line = format_metric(name, value)
+    preamble, days = _parse_days(content)
+    by_date = {d[0]: d for d in days}
+    if date in by_date:
+        entries = by_date[date][1]
+        for i, e in enumerate(entries):
+            m = _METRIC_RE.match(e)
+            if m and m.group(1) == name:
+                entries[i] = line
+                break
+        else:
+            entries.append(line)
+    else:
+        days.append([date, [line]])
+    return _render_days(preamble, days)
+
+
+def parse_metrics(content):
+    out = []
+    date = None
+    for l in content.splitlines():
+        if l.startswith("## "):
+            date = l[3:].strip()
+        elif date:
+            m = _METRIC_RE.match(l.strip())
+            if m:
+                out.append({"date": date, "name": m.group(1), "value": float(m.group(2))})
+    return out
+
+
+def metric_series(content, since, until):
+    series = {}
+    for e in parse_metrics(content):
+        if since <= e["date"] <= until:
+            series.setdefault(e["name"], []).append((e["date"], e["value"]))
+    for name in series:
+        series[name].sort()
+    return series
+
+
 def _cmd_log(rest):
     import argparse
     ap = argparse.ArgumentParser(prog="worklog.py log")

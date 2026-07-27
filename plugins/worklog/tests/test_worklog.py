@@ -218,3 +218,42 @@ def test_parse_metric_value():
     assert wl.parse_metric_value("12") == 12.0
     assert wl.parse_metric_value("nope") is None      # unparseable
     assert wl.parse_metric_value("") is None
+
+
+def test_upsert_metric_creates_and_accumulates():
+    out = wl.upsert_metric("", "2026-07-14", "focus-hours", 4.5)
+    assert out == "## 2026-07-14\n- focus-hours: 4.5\n"
+    out = wl.upsert_metric(out, "2026-07-14", "sleep-hours", 7.2)
+    lines = [l for l in out.splitlines() if l.startswith("- ")]
+    assert lines == ["- focus-hours: 4.5", "- sleep-hours: 7.2"]
+
+
+def test_upsert_metric_replaces_same_name_same_day():
+    existing = "## 2026-07-14\n- focus-hours: 4.5\n"
+    out = wl.upsert_metric(existing, "2026-07-14", "focus-hours", 6.0)
+    assert out.count("focus-hours") == 1
+    assert "- focus-hours: 6.0" in out and "4.5" not in out
+
+
+def test_upsert_metric_newest_day_on_top():
+    existing = "## 2026-07-13\n- focus-hours: 3.0\n"
+    out = wl.upsert_metric(existing, "2026-07-14", "focus-hours", 4.0)
+    assert out.index("2026-07-14") < out.index("2026-07-13")
+
+
+METRICS_SAMPLE = (
+    "## 2026-07-14\n- focus-hours: 4.5\n- energy: 4\n"
+    "## 2026-07-12\n- focus-hours: 3.0\n"
+)
+
+
+def test_parse_metrics():
+    got = wl.parse_metrics(METRICS_SAMPLE)
+    assert {"date": "2026-07-14", "name": "focus-hours", "value": 4.5} in got
+    assert {"date": "2026-07-14", "name": "energy", "value": 4.0} in got
+    assert len(got) == 3
+
+
+def test_metric_series_range_inclusive():
+    s = wl.metric_series(METRICS_SAMPLE, "2026-07-13", "2026-07-14")
+    assert s == {"focus-hours": [("2026-07-14", 4.5)], "energy": [("2026-07-14", 4.0)]}

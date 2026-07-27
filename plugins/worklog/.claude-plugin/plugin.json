@@ -3,5 +3,5 @@
   "description": "Capture work activity into an Obsidian Worklog.md and draft weekly/perf reports from it.",
   "author": { "name": "Rob Sartin" },
   "keywords": ["worklog", "reports", "obsidian", "notes", "review"],
-  "commands": ["./commands/log.md", "./commands/weekly-report.md", "./commands/perf-review.md"]
+  "commands": ["./commands/log.md", "./commands/weekly-report.md", "./commands/perf-review.md", "./commands/metric.md"]
 }

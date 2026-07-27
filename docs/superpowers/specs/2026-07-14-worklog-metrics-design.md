@@ -73,7 +73,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric <name> <value> [--date YYY
 - Reports the stored reading (`metric: focus-hours = 4.5 on 2026-07-14`).
 
 `help` events use the existing `/worklog:log`, once `help` is added to the default `types`:
-`/worklog:log help "Unblocked Dana on the Zuora gateway onboarding"`.
+`/worklog:log help "Unblocked Dana on the payment-gateway onboarding"`.
 
 ## Report — `/worklog:metrics`
 

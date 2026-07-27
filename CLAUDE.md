@@ -82,7 +82,7 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 
 ### worklog
 
-`worklog` captures work activity into a rolling Obsidian `Worklog.md` (via `/worklog:log`) and drafts weekly status reports (`/worklog:weekly-report`) or performance-review narratives (`/worklog:perf-review`) from it. Its helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (the `worklog` section of `~/.claude/start-work.json`), never part of this repo; reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports augment the hand-logged notes with a **factual pull** (tickets resolved + MRs merged in range).
+`worklog` captures work activity into a rolling Obsidian `Worklog.md` (via `/worklog:log`) and drafts weekly status reports (`/worklog:weekly-report`) or performance-review narratives (`/worklog:perf-review`) from it. Its helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (the `worklog` section of `~/.claude/start-work.json`), never part of this repo; reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports augment the hand-logged notes with a **factual pull** (tickets resolved + MRs merged in range). `/worklog:metric` records numeric KPIs (e.g. focus hours, energy) into a separate `Metrics.md`, upserting one value per name per day, kept out of the work reports; `/worklog:metrics` drafts a trend report (series, sparkline, derived counts) from it. The `help` event type (alongside `log`'s other event types) feeds the derived help-count KPI.
 
 ## Plugin conventions
 

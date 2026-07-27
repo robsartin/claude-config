@@ -10,8 +10,9 @@ import sys
 DEFAULTS = {
     "vaultPath": "~/Obsidian",
     "worklogFile": "Worklog.md",
+    "metricsFile": "Metrics.md",
     "reportsDir": "Reports",
-    "types": ["started", "shipped", "note"],
+    "types": ["started", "shipped", "note", "help"],
 }
 
 
@@ -29,6 +30,20 @@ def load_config(path):
 
 def worklog_path(cfg):
     return os.path.expanduser(os.path.join(cfg["vaultPath"], cfg["worklogFile"]))
+
+
+def metrics_path(cfg):
+    return os.path.expanduser(os.path.join(cfg["vaultPath"], cfg["metricsFile"]))
+
+
+def format_metric(name, value):
+    return f"- {name}: {value}"
+
+
+def parse_metric_value(raw):
+    """Leading number of `raw` as a float ('7.2h' -> 7.2); None if unparseable."""
+    m = re.match(r"\s*(-?\d+(?:\.\d+)?)", str(raw))
+    return float(m.group(1)) if m else None
 
 
 def _default_config_path():
@@ -171,8 +186,91 @@ def main(argv):
         fn = parse_jira_list if cmd == "parse-jira" else parse_gitlab_mrs
         print(json.dumps(fn(data), indent=2))
         return 0
+    if cmd == "metric":
+        return _cmd_metric(rest)
+    if cmd == "metrics":
+        return _cmd_metrics(rest)
     print(f"unknown subcommand: {cmd}", file=sys.stderr)
     return 2
+
+
+_METRIC_RE = re.compile(r"- ([\w-]+):\s*(-?\d+(?:\.\d+)?)\s*$")
+
+
+def upsert_metric(content, date, name, value):
+    """Insert-or-replace `- <name>: <value>` under the `## <date>` heading,
+    newest day on top. Same name + same day replaces the value."""
+    line = format_metric(name, value)
+    preamble, days = _parse_days(content)
+    by_date = {d[0]: d for d in days}
+    if date in by_date:
+        entries = by_date[date][1]
+        for i, e in enumerate(entries):
+            m = _METRIC_RE.match(e)
+            if m and m.group(1) == name:
+                entries[i] = line
+                break
+        else:
+            entries.append(line)
+    else:
+        days.append([date, [line]])
+    return _render_days(preamble, days)
+
+
+def parse_metrics(content):
+    out = []
+    date = None
+    for l in content.splitlines():
+        if l.startswith("## "):
+            date = l[3:].strip()
+        elif date:
+            m = _METRIC_RE.match(l.strip())
+            if m:
+                out.append({"date": date, "name": m.group(1), "value": float(m.group(2))})
+    return out
+
+
+def metric_series(content, since, until):
+    series = {}
+    for e in parse_metrics(content):
+        if since <= e["date"] <= until:
+            series.setdefault(e["name"], []).append((e["date"], e["value"]))
+    for name in series:
+        series[name].sort()
+    return series
+
+
+_SPARK = "▁▂▃▄▅▆▇█"
+
+
+def summarize(points):
+    vals = [v for _, v in points]
+    return {
+        "latest": vals[-1],
+        "avg": round(sum(vals) / len(vals), 2),
+        "min": min(vals),
+        "max": max(vals),
+        "count": len(vals),
+    }
+
+
+def sparkline(values):
+    if not values:
+        return ""
+    lo, hi = min(values), max(values)
+    span = hi - lo
+    mid = (len(_SPARK) - 1) // 2   # index 3 -> ▄, used for a flat/single series
+    return "".join(
+        _SPARK[mid] if span == 0 else _SPARK[round((v - lo) / span * (len(_SPARK) - 1))]
+        for v in values
+    )
+
+
+def count_events(content, type_, since, until):
+    return sum(
+        1 for e in parse(content)
+        if e["type"] == type_ and since <= e["date"] <= until
+    )
 
 
 def _cmd_log(rest):
@@ -212,6 +310,63 @@ def _cmd_log(rest):
     with open(path, "w") as f:
         f.write(new)
     print(f"logged: {line}")
+    return 0
+
+
+def _cmd_metric(rest):
+    import argparse
+    ap = argparse.ArgumentParser(prog="worklog.py metric")
+    ap.add_argument("name")
+    ap.add_argument("value")
+    ap.add_argument("--date", default=None)
+    a = ap.parse_args(rest)
+    num = parse_metric_value(a.value)
+    if num is None:
+        print(f"worklog: metric value '{a.value}' is not numeric", file=sys.stderr)
+        return 2
+    if a.date is not None:
+        try:
+            datetime.date.fromisoformat(a.date)
+        except ValueError:
+            print(f"worklog: invalid --date '{a.date}' (expected YYYY-MM-DD)", file=sys.stderr)
+            return 2
+    date = a.date or datetime.date.today().isoformat()
+    cfg = load_config(_default_config_path())
+    path = metrics_path(cfg)
+    if not os.path.isdir(os.path.dirname(path)):
+        print(f"worklog: vault dir missing ({os.path.dirname(path)}) — configure worklog.vaultPath.",
+              file=sys.stderr)
+        return 1
+    content = open(path).read() if os.path.exists(path) else ""
+    # store as int when the value is integral (energy: 4, not 4.0)
+    stored = int(num) if num == int(num) else num
+    with open(path, "w") as f:
+        f.write(upsert_metric(content, date, a.name, stored))
+    print(f"metric: {a.name} = {stored} on {date}")
+    return 0
+
+
+def _cmd_metrics(rest):
+    import argparse
+    ap = argparse.ArgumentParser(prog="worklog.py metrics")
+    ap.add_argument("--since", required=True)
+    ap.add_argument("--until", required=True)
+    a = ap.parse_args(rest)
+    cfg = load_config(_default_config_path())
+    mpath = metrics_path(cfg)
+    wpath = worklog_path(cfg)
+    mcontent = open(mpath).read() if os.path.exists(mpath) else ""
+    wcontent = open(wpath).read() if os.path.exists(wpath) else ""
+    series = metric_series(mcontent, a.since, a.until)
+    metrics = {
+        name: {"points": pts, "summary": summarize(pts), "sparkline": sparkline([v for _, v in pts])}
+        for name, pts in series.items()
+    }
+    derived = {
+        "help-count": count_events(wcontent, "help", a.since, a.until),
+        "prs-merged": count_events(wcontent, "shipped", a.since, a.until),
+    }
+    print(json.dumps({"metrics": metrics, "derived": derived}, indent=2))
     return 0
 
 

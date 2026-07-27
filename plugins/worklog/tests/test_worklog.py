@@ -196,3 +196,130 @@ def test_parse_gitlab_mrs_error_object_yields_empty():
 def test_parse_gitlab_mrs_references_without_full_uses_iid():
     mrs = [{"iid": 9, "title": "T", "merged_at": "2026-07-02T00:00:00Z", "references": {}}]
     assert wl.parse_gitlab_mrs(mrs)[0]["ref"] == "!9"
+
+
+def test_defaults_have_metrics_file_and_help_type():
+    assert wl.DEFAULTS["metricsFile"] == "Metrics.md"
+    assert "help" in wl.DEFAULTS["types"]
+
+
+def test_metrics_path(tmp_path):
+    cfg = {"vaultPath": str(tmp_path), "metricsFile": "M.md"}
+    assert wl.metrics_path(cfg) == str(tmp_path / "M.md")
+
+
+def test_format_metric():
+    assert wl.format_metric("focus-hours", 4.5) == "- focus-hours: 4.5"
+
+
+def test_parse_metric_value():
+    assert wl.parse_metric_value("4.5") == 4.5
+    assert wl.parse_metric_value("7.2h") == 7.2      # trailing unit accepted
+    assert wl.parse_metric_value("12") == 12.0
+    assert wl.parse_metric_value("nope") is None      # unparseable
+    assert wl.parse_metric_value("") is None
+
+
+def test_upsert_metric_creates_and_accumulates():
+    out = wl.upsert_metric("", "2026-07-14", "focus-hours", 4.5)
+    assert out == "## 2026-07-14\n- focus-hours: 4.5\n"
+    out = wl.upsert_metric(out, "2026-07-14", "sleep-hours", 7.2)
+    lines = [l for l in out.splitlines() if l.startswith("- ")]
+    assert lines == ["- focus-hours: 4.5", "- sleep-hours: 7.2"]
+
+
+def test_upsert_metric_replaces_same_name_same_day():
+    existing = "## 2026-07-14\n- focus-hours: 4.5\n"
+    out = wl.upsert_metric(existing, "2026-07-14", "focus-hours", 6.0)
+    assert out.count("focus-hours") == 1
+    assert "- focus-hours: 6.0" in out and "4.5" not in out
+
+
+def test_upsert_metric_newest_day_on_top():
+    existing = "## 2026-07-13\n- focus-hours: 3.0\n"
+    out = wl.upsert_metric(existing, "2026-07-14", "focus-hours", 4.0)
+    assert out.index("2026-07-14") < out.index("2026-07-13")
+
+
+METRICS_SAMPLE = (
+    "## 2026-07-14\n- focus-hours: 4.5\n- energy: 4\n"
+    "## 2026-07-12\n- focus-hours: 3.0\n"
+)
+
+
+def test_parse_metrics():
+    got = wl.parse_metrics(METRICS_SAMPLE)
+    assert {"date": "2026-07-14", "name": "focus-hours", "value": 4.5} in got
+    assert {"date": "2026-07-14", "name": "energy", "value": 4.0} in got
+    assert len(got) == 3
+
+
+def test_metric_series_range_inclusive():
+    s = wl.metric_series(METRICS_SAMPLE, "2026-07-13", "2026-07-14")
+    assert s == {"focus-hours": [("2026-07-14", 4.5)], "energy": [("2026-07-14", 4.0)]}
+
+
+def test_summarize():
+    s = wl.summarize([("2026-07-12", 3.0), ("2026-07-14", 5.0)])
+    assert s == {"latest": 5.0, "avg": 4.0, "min": 3.0, "max": 5.0, "count": 2}
+
+
+def test_summarize_single_value():
+    s = wl.summarize([("2026-07-14", 7.0)])
+    assert s == {"latest": 7.0, "avg": 7.0, "min": 7.0, "max": 7.0, "count": 1}
+
+
+def test_sparkline():
+    assert wl.sparkline([1, 2, 3, 4, 5, 6, 7, 8]) == "▁▂▃▄▅▆▇█"
+    assert wl.sparkline([5, 5, 5]) == "▄▄▄"      # flat series -> mid bar, no divide-by-zero
+    assert wl.sparkline([3]) == "▄"               # single value
+
+
+def test_count_events():
+    content = (
+        "## 2026-07-14\n- **help** Unblocked Dana\n- **shipped** PROJ-1 done\n"
+        "## 2026-07-10\n- **help** Reviewed a design\n"
+    )
+    assert wl.count_events(content, "help", "2026-07-13", "2026-07-14") == 1
+    assert wl.count_events(content, "help", "2026-07-01", "2026-07-14") == 2
+    assert wl.count_events(content, "shipped", "2026-07-13", "2026-07-14") == 1
+
+
+def test_cmd_metric_end_to_end_upsert(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+
+    assert wl.main(["metric", "focus-hours", "4.5", "--date", "2026-07-14"]) == 0
+    assert wl.main(["metric", "focus-hours", "6.0", "--date", "2026-07-14"]) == 0   # upsert
+    assert wl.main(["metric", "energy", "4", "--date", "2026-07-14"]) == 0
+    text = (vault / "Metrics.md").read_text()
+    assert text.count("focus-hours") == 1
+    assert "- focus-hours: 6" in text and "4.5" not in text   # upsert replaced old value
+    assert "- energy: 4\n" in text                             # integral value stored bare, not 4.0
+
+
+def test_cmd_metric_rejects_non_numeric(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    assert wl.main(["metric", "focus-hours", "lots"]) != 0
+    assert not (vault / "Metrics.md").exists()
+
+
+def test_cmd_metrics_report_json(tmp_path, monkeypatch, capsys):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    (vault / "Metrics.md").write_text("## 2026-07-14\n- focus-hours: 4.5\n")
+    (vault / "Worklog.md").write_text("## 2026-07-14\n- **help** X\n- **shipped** Y\n")
+
+    assert wl.main(["metrics", "--since", "2026-07-13", "--until", "2026-07-14"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["metrics"]["focus-hours"]["summary"]["latest"] == 4.5
+    assert out["metrics"]["focus-hours"]["sparkline"] == "▄"
+    assert out["derived"]["help-count"] == 1
+    assert out["derived"]["prs-merged"] == 1

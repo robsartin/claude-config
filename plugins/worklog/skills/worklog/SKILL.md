@@ -68,3 +68,35 @@ hand-logged entries and, if available, the **Factual pull** spine for the range,
 way. Synthesize accomplishments, recurring themes, scope/impact, and collaboration into a
 narrative, shaped by `worklog.perfTemplate` if present. Draft only, into the vault. Professional
 register — do not use the personal `voice` skill, and do not claim work that isn't in the log.
+
+## Metrics (KPIs)
+
+Numeric readings tracked for their **trend** live in a separate file, `Metrics.md`
+(`worklog.metricsFile`), which the weekly/perf reports never touch — so health numbers stay out
+of work drafts.
+
+### Record a reading
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric <name> <value> [--date YYYY-MM-DD]
+```
+
+e.g. `metric focus-hours 4.5`, `metric sleep-hours 7.2`, `metric energy 4`. The value must be
+numeric (a trailing unit like `7.2h` is fine — the number is kept). Re-recording the same metric
+on the same day **replaces** it (a reading, not an event). Mentoring/assists are logged as
+`help` events instead — `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" log help "<what>"` — so
+they double as perf-review records.
+
+### Metrics report
+
+1. Resolve the range (default the current week).
+2. Pull the structured data:
+   `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metrics --since <D> --until <D>`
+   It returns each metric's points, a `summary` (latest / avg / min / max / count), and a
+   `sparkline`, plus `derived` counts: `help-count` (logged `help` events) and `prs-merged`
+   (logged `shipped` events — a local proxy until the Jira/GitLab factual pull is wired in).
+3. Draft a short report from ONLY that data — one line per metric with its sparkline and latest
+   vs average, then the derived counts. If the range is empty, say "no metrics in <range>";
+   never invent readings.
+4. Write the draft to `<vaultPath>/<reportsDir>/Metrics-<YYYY>-W<ww>.md` for the user to read.
+   Do not send it. Professional, factual — do not use the personal `voice` skill.

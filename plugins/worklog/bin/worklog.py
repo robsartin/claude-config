@@ -236,6 +236,39 @@ def metric_series(content, since, until):
     return series
 
 
+_SPARK = "▁▂▃▄▅▆▇█"
+
+
+def summarize(points):
+    vals = [v for _, v in points]
+    return {
+        "latest": vals[-1],
+        "avg": round(sum(vals) / len(vals), 2),
+        "min": min(vals),
+        "max": max(vals),
+        "count": len(vals),
+    }
+
+
+def sparkline(values):
+    if not values:
+        return ""
+    lo, hi = min(values), max(values)
+    span = hi - lo
+    mid = (len(_SPARK) - 1) // 2   # index 3 -> ▄, used for a flat/single series
+    return "".join(
+        _SPARK[mid] if span == 0 else _SPARK[round((v - lo) / span * (len(_SPARK) - 1))]
+        for v in values
+    )
+
+
+def count_events(content, type_, since, until):
+    return sum(
+        1 for e in parse(content)
+        if e["type"] == type_ and since <= e["date"] <= until
+    )
+
+
 def _cmd_log(rest):
     import argparse
     ap = argparse.ArgumentParser(prog="worklog.py log")

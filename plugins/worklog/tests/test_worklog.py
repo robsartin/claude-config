@@ -257,3 +257,29 @@ def test_parse_metrics():
 def test_metric_series_range_inclusive():
     s = wl.metric_series(METRICS_SAMPLE, "2026-07-13", "2026-07-14")
     assert s == {"focus-hours": [("2026-07-14", 4.5)], "energy": [("2026-07-14", 4.0)]}
+
+
+def test_summarize():
+    s = wl.summarize([("2026-07-12", 3.0), ("2026-07-14", 5.0)])
+    assert s == {"latest": 5.0, "avg": 4.0, "min": 3.0, "max": 5.0, "count": 2}
+
+
+def test_summarize_single_value():
+    s = wl.summarize([("2026-07-14", 7.0)])
+    assert s == {"latest": 7.0, "avg": 7.0, "min": 7.0, "max": 7.0, "count": 1}
+
+
+def test_sparkline():
+    assert wl.sparkline([1, 2, 3, 4, 5, 6, 7, 8]) == "▁▂▃▄▅▆▇█"
+    assert wl.sparkline([5, 5, 5]) == "▄▄▄"      # flat series -> mid bar, no divide-by-zero
+    assert wl.sparkline([3]) == "▄"               # single value
+
+
+def test_count_events():
+    content = (
+        "## 2026-07-14\n- **help** Unblocked Dana\n- **shipped** PROJ-1 done\n"
+        "## 2026-07-10\n- **help** Reviewed a design\n"
+    )
+    assert wl.count_events(content, "help", "2026-07-13", "2026-07-14") == 1
+    assert wl.count_events(content, "help", "2026-07-01", "2026-07-14") == 2
+    assert wl.count_events(content, "shipped", "2026-07-13", "2026-07-14") == 1

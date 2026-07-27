@@ -10,8 +10,9 @@ import sys
 DEFAULTS = {
     "vaultPath": "~/Obsidian",
     "worklogFile": "Worklog.md",
+    "metricsFile": "Metrics.md",
     "reportsDir": "Reports",
-    "types": ["started", "shipped", "note"],
+    "types": ["started", "shipped", "note", "help"],
 }
 
 
@@ -29,6 +30,20 @@ def load_config(path):
 
 def worklog_path(cfg):
     return os.path.expanduser(os.path.join(cfg["vaultPath"], cfg["worklogFile"]))
+
+
+def metrics_path(cfg):
+    return os.path.expanduser(os.path.join(cfg["vaultPath"], cfg["metricsFile"]))
+
+
+def format_metric(name, value):
+    return f"- {name}: {value}"
+
+
+def parse_metric_value(raw):
+    """Leading number of `raw` as a float ('7.2h' -> 7.2); None if unparseable."""
+    m = re.match(r"\s*(-?\d+(?:\.\d+)?)", str(raw))
+    return float(m.group(1)) if m else None
 
 
 def _default_config_path():

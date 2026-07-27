@@ -196,3 +196,25 @@ def test_parse_gitlab_mrs_error_object_yields_empty():
 def test_parse_gitlab_mrs_references_without_full_uses_iid():
     mrs = [{"iid": 9, "title": "T", "merged_at": "2026-07-02T00:00:00Z", "references": {}}]
     assert wl.parse_gitlab_mrs(mrs)[0]["ref"] == "!9"
+
+
+def test_defaults_have_metrics_file_and_help_type():
+    assert wl.DEFAULTS["metricsFile"] == "Metrics.md"
+    assert "help" in wl.DEFAULTS["types"]
+
+
+def test_metrics_path(tmp_path):
+    cfg = {"vaultPath": str(tmp_path), "metricsFile": "M.md"}
+    assert wl.metrics_path(cfg) == str(tmp_path / "M.md")
+
+
+def test_format_metric():
+    assert wl.format_metric("focus-hours", 4.5) == "- focus-hours: 4.5"
+
+
+def test_parse_metric_value():
+    assert wl.parse_metric_value("4.5") == 4.5
+    assert wl.parse_metric_value("7.2h") == 7.2      # trailing unit accepted
+    assert wl.parse_metric_value("12") == 12.0
+    assert wl.parse_metric_value("nope") is None      # unparseable
+    assert wl.parse_metric_value("") is None

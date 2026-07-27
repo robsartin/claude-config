@@ -40,7 +40,7 @@ plugins/worklog/                    # "worklog" — Python-backed (python3, no v
   .claude-plugin/plugin.json
   skills/worklog/SKILL.md
   bin/worklog.py                    # log + report + metrics helpers
-  commands/log.md, weekly-report.md, perf-review.md, metric.md
+  commands/log.md, weekly-report.md, perf-review.md, metric.md, metrics.md
 bin/bootstrap.sh                    # one-shot new-machine setup (see README)
 .github/workflows/                  # per-plugin path-scoped CI
 ```

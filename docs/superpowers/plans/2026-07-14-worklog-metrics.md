@@ -313,7 +313,7 @@ def sparkline(values):
         return ""
     lo, hi = min(values), max(values)
     span = hi - lo
-    mid = len(_SPARK) // 2
+    mid = (len(_SPARK) - 1) // 2   # index 3 -> ▄, used for a flat/single series
     return "".join(
         _SPARK[mid] if span == 0 else _SPARK[round((v - lo) / span * (len(_SPARK) - 1))]
         for v in values
@@ -364,9 +364,11 @@ def test_cmd_metric_end_to_end_upsert(tmp_path, monkeypatch):
 
     assert wl.main(["metric", "focus-hours", "4.5", "--date", "2026-07-14"]) == 0
     assert wl.main(["metric", "focus-hours", "6.0", "--date", "2026-07-14"]) == 0   # upsert
+    assert wl.main(["metric", "energy", "4", "--date", "2026-07-14"]) == 0
     text = (vault / "Metrics.md").read_text()
     assert text.count("focus-hours") == 1
-    assert "- focus-hours: 6.0" in text
+    assert "- focus-hours: 6" in text and "4.5" not in text   # upsert replaced old value
+    assert "- energy: 4\n" in text                             # integral value stored bare, not 4.0
 
 
 def test_cmd_metric_rejects_non_numeric(tmp_path, monkeypatch):

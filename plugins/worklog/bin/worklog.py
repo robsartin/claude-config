@@ -353,13 +353,13 @@ def parse_metric_pairs(tokens):
 def _cmd_metric(rest):
     import argparse
     ap = argparse.ArgumentParser(prog="worklog.py metric")
-    ap.add_argument("name")
-    ap.add_argument("value")
+    ap.add_argument("tokens", nargs="+")
     ap.add_argument("--date", default=None)
     a = ap.parse_args(rest)
-    num = parse_metric_value(a.value)
-    if num is None:
-        print(f"worklog: metric value '{a.value}' is not numeric", file=sys.stderr)
+    try:
+        pairs = parse_metric_pairs(a.tokens)
+    except ValueError as e:
+        print(f"worklog: {e}", file=sys.stderr)
         return 2
     if a.date is not None:
         try:
@@ -375,11 +375,15 @@ def _cmd_metric(rest):
               file=sys.stderr)
         return 1
     content = open(path).read() if os.path.exists(path) else ""
-    # store as int when the value is integral (energy: 4, not 4.0)
-    stored = int(num) if num == int(num) else num
+    stored_pairs = []
+    for name, num in pairs:
+        # store as int when the value is integral (energy: 4, not 4.0)
+        stored = int(num) if num == int(num) else num
+        content = upsert_metric(content, date, name, stored)
+        stored_pairs.append(f"{name}={stored}")
     with open(path, "w") as f:
-        f.write(upsert_metric(content, date, a.name, stored))
-    print(f"metric: {a.name} = {stored} on {date}")
+        f.write(content)
+    print(f"metric: {', '.join(stored_pairs)} on {date}")
     return 0
 
 

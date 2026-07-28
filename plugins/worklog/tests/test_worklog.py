@@ -336,6 +336,19 @@ def test_cmd_metric_batch_atomic_on_bad_token(tmp_path, monkeypatch):
     assert not (vault / "Metrics.md").exists()   # nothing written — atomic
 
 
+def test_cmd_metric_batch_atomic_leaves_existing_file_unchanged(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    before = "## 2026-07-28\n- work-hours: 8\n"
+    (vault / "Metrics.md").write_text(before)
+
+    rc = wl.main(["metric", "work-hours=9.5", "sleep=oops", "--date", "2026-07-28"])
+    assert rc != 0
+    assert (vault / "Metrics.md").read_text() == before   # existing file byte-unchanged
+
+
 def test_cmd_metrics_report_json(tmp_path, monkeypatch, capsys):
     vault = tmp_path / "v"; vault.mkdir()
     cfgdir = tmp_path / "c"; cfgdir.mkdir()

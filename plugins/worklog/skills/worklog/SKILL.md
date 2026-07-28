@@ -60,6 +60,8 @@ drop the duplicate. Everything is still factual — the pull never invents activ
    <range>" — never invent activity.
 4. Write the draft to `<vaultPath>/<reportsDir>/Weekly-<YYYY>-W<ww>.md` for the user to edit.
    Do not send or post it. Professional register — do not use the personal `voice` skill, and do not include anything not present in the pulled entries.
+5. Append the **Report metrics section** (see Metrics below) as the last block of the draft, for
+   the same range. Omit it if there are no readings in range.
 
 ## Performance review
 
@@ -69,11 +71,16 @@ way. Synthesize accomplishments, recurring themes, scope/impact, and collaborati
 narrative, shaped by `worklog.perfTemplate` if present. Draft only, into the vault. Professional
 register — do not use the personal `voice` skill, and do not claim work that isn't in the log.
 
+Finally, append the **Report metrics section** (see Metrics below) as the last block, for the
+review's range — omitting it if there are no readings.
+
 ## Metrics (KPIs)
 
 Numeric readings tracked for their **trend** live in a separate file, `Metrics.md`
-(`worklog.metricsFile`), which the weekly/perf reports never touch — so health numbers stay out
-of work drafts.
+(`worklog.metricsFile`), kept apart from the `Worklog.md` event log. The weekly report and the
+perf-review each end with a **Metrics (curate before sharing)** block built from these readings —
+a section you trim before using the draft, so anything personal is easy to drop and nothing is
+ever auto-sent.
 
 ### Record a reading
 
@@ -81,7 +88,8 @@ of work drafts.
 python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric <name> <value> [--date YYYY-MM-DD]
 ```
 
-e.g. `metric focus-hours 4.5`, `metric sleep-hours 7.2`, `metric energy 4`. The value must be
+e.g. `metric work-hours 8`, `metric focus-hours 4.5`, `metric sleep-hours 7.2`, `metric energy 4`
+(`work-hours` is a good work KPI to surface in the reports). The value must be
 numeric (a trailing unit like `7.2h` is fine — the number is kept). Re-recording the same metric
 on the same day **replaces** it (a reading, not an event). Mentoring/assists are logged as
 `help` events instead — `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" log help "<what>"` — so
@@ -92,7 +100,7 @@ they double as perf-review records.
 1. Resolve the range (default the current week).
 2. Pull the structured data:
    `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metrics --since <D> --until <D>`
-   It returns each metric's points, a `summary` (latest / avg / min / max / count), and a
+   It returns each metric's points, a `summary` (latest / total / avg / min / max / count), and a
    `sparkline`, plus `derived` counts: `help-count` (logged `help` events) and `prs-merged`
    (logged `shipped` events — a local proxy until the Jira/GitLab factual pull is wired in).
 3. Draft a short report from ONLY that data — one line per metric with its sparkline and latest
@@ -100,3 +108,25 @@ they double as perf-review records.
    never invent readings.
 4. Write the draft to `<vaultPath>/<reportsDir>/Metrics-<YYYY>-W<ww>.md` for the user to read.
    Do not send it. Professional, factual — do not use the personal `voice` skill.
+
+### Report metrics section (weekly & perf)
+
+Both the weekly report and the performance review end with a metrics block, for the **same range
+as the report**:
+
+1. Pull the data: `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metrics --since <D> --until <D>`.
+2. If no metric has readings in range, **omit the section entirely** — no empty header.
+3. Otherwise append it as the **last** block of the draft:
+
+```markdown
+## Metrics (curate before sharing)
+
+- work-hours: 42.5 total over 5 days, 8.5/day avg
+- focus-hours: 21.0 total over 5 days, 4.2/day avg
+- energy: 4.0/day avg (min 3, max 5)
+```
+
+One line per metric with readings in range: `total` + daily average, where the day count is the
+metric's `summary.count`. For a rating-style metric where a sum is meaningless (e.g. `energy`),
+show the daily average (and min–max) and omit the total. The header tells the reader to trim it
+before sharing; never fabricate readings.

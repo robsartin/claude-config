@@ -1,5 +1,5 @@
 ---
-description: Draft a performance-review narrative from your Worklog.md
+description: Draft a performance-review narrative from your Worklog.md (with a curate-before-sharing metrics section)
 argument-hint: "[since..until]"
 allowed-tools: Bash, Write
 ---

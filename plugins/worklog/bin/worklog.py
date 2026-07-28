@@ -247,6 +247,7 @@ def summarize(points):
     vals = [v for _, v in points]
     return {
         "latest": vals[-1],
+        "total": round(sum(vals), 2),
         "avg": round(sum(vals) / len(vals), 2),
         "min": min(vals),
         "max": max(vals),

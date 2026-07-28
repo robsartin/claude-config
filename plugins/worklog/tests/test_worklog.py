@@ -261,12 +261,12 @@ def test_metric_series_range_inclusive():
 
 def test_summarize():
     s = wl.summarize([("2026-07-12", 3.0), ("2026-07-14", 5.0)])
-    assert s == {"latest": 5.0, "avg": 4.0, "min": 3.0, "max": 5.0, "count": 2}
+    assert s == {"latest": 5.0, "total": 8.0, "avg": 4.0, "min": 3.0, "max": 5.0, "count": 2}
 
 
 def test_summarize_single_value():
     s = wl.summarize([("2026-07-14", 7.0)])
-    assert s == {"latest": 7.0, "avg": 7.0, "min": 7.0, "max": 7.0, "count": 1}
+    assert s == {"latest": 7.0, "total": 7.0, "avg": 7.0, "min": 7.0, "max": 7.0, "count": 1}
 
 
 def test_sparkline():

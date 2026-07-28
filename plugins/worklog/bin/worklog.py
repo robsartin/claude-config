@@ -314,6 +314,42 @@ def _cmd_log(rest):
     return 0
 
 
+_NAME_RE = re.compile(r"^[\w-]+$")
+
+
+def _validate_name(name, token):
+    if not _NAME_RE.match(name):
+        raise ValueError(f"invalid metric name in '{token}'")
+    return name
+
+
+def _validate_value(raw, token):
+    v = parse_metric_value(raw)
+    if v is None:
+        raise ValueError(f"'{raw}' in '{token}' is not numeric")
+    return v
+
+
+def parse_metric_pairs(tokens):
+    """Interpret positional `metric` tokens into [(name, value_float)].
+    Batch form: every token is `name=value`. Legacy form: exactly two bare
+    tokens `name value`. Raises ValueError (naming the offending token) on
+    anything else, before any I/O — so a bad batch writes nothing."""
+    if not tokens:
+        raise ValueError("no metrics given")
+    has_eq = ["=" in t for t in tokens]
+    if all(has_eq):
+        pairs = []
+        for t in tokens:
+            name, _, raw = t.partition("=")
+            pairs.append((_validate_name(name, t), _validate_value(raw, t)))
+        return pairs
+    if len(tokens) == 2 and not any(has_eq):
+        name, raw = tokens
+        return [(_validate_name(name, name), _validate_value(raw, raw))]
+    raise ValueError("use name=value tokens, e.g. work-hours=8 focus-hours=4.5")
+
+
 def _cmd_metric(rest):
     import argparse
     ap = argparse.ArgumentParser(prog="worklog.py metric")

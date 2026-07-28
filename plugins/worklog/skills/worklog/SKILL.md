@@ -85,7 +85,9 @@ ever auto-sent.
 ### Record a reading
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric <name> <value> [--date YYYY-MM-DD]
+python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric <name=value> [<name=value> ...] [--date YYYY-MM-DD]
+# one reading, or a whole day at once:
+python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric work-hours=8 focus-hours=4.5 energy=4
 ```
 
 e.g. `metric work-hours 8`, `metric focus-hours 4.5`, `metric sleep-hours 7.2`, `metric energy 4`
@@ -93,7 +95,10 @@ e.g. `metric work-hours 8`, `metric focus-hours 4.5`, `metric sleep-hours 7.2`, 
 numeric (a trailing unit like `7.2h` is fine — the number is kept). Re-recording the same metric
 on the same day **replaces** it (a reading, not an event). Mentoring/assists are logged as
 `help` events instead — `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" log help "<what>"` — so
-they double as perf-review records.
+they double as perf-review records. Pass several `name=value` tokens to record a whole day in one
+call; if any token is malformed or non-numeric the **whole batch is rejected** and nothing is
+written, so a corrected line can be re-entered. The bare `metric <name> <value>` form still works
+for a single reading.
 
 ### Metrics report
 

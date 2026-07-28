@@ -1,4 +1,5 @@
 import json, os, sys
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
@@ -309,6 +310,45 @@ def test_cmd_metric_rejects_non_numeric(tmp_path, monkeypatch):
     assert not (vault / "Metrics.md").exists()
 
 
+def test_cmd_metric_batch_writes_all_in_one_call(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+
+    rc = wl.main(["metric", "work-hours=8", "focus-hours=4.5", "energy=4", "--date", "2026-07-28"])
+    assert rc == 0
+    text = (vault / "Metrics.md").read_text()
+    assert "## 2026-07-28" in text
+    assert "- work-hours: 8\n" in text        # integral stored bare
+    assert "- focus-hours: 4.5\n" in text
+    assert "- energy: 4\n" in text
+
+
+def test_cmd_metric_batch_atomic_on_bad_token(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+
+    rc = wl.main(["metric", "work-hours=8", "focus-hours=lots", "--date", "2026-07-28"])
+    assert rc != 0
+    assert not (vault / "Metrics.md").exists()   # nothing written — atomic
+
+
+def test_cmd_metric_batch_atomic_leaves_existing_file_unchanged(tmp_path, monkeypatch):
+    vault = tmp_path / "v"; vault.mkdir()
+    cfgdir = tmp_path / "c"; cfgdir.mkdir()
+    (cfgdir / "start-work.json").write_text(json.dumps({"worklog": {"vaultPath": str(vault)}}))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(cfgdir))
+    before = "## 2026-07-28\n- work-hours: 8\n"
+    (vault / "Metrics.md").write_text(before)
+
+    rc = wl.main(["metric", "work-hours=9.5", "sleep=oops", "--date", "2026-07-28"])
+    assert rc != 0
+    assert (vault / "Metrics.md").read_text() == before   # existing file byte-unchanged
+
+
 def test_cmd_metrics_report_json(tmp_path, monkeypatch, capsys):
     vault = tmp_path / "v"; vault.mkdir()
     cfgdir = tmp_path / "c"; cfgdir.mkdir()
@@ -323,3 +363,42 @@ def test_cmd_metrics_report_json(tmp_path, monkeypatch, capsys):
     assert out["metrics"]["focus-hours"]["sparkline"] == "▄"
     assert out["derived"]["help-count"] == 1
     assert out["derived"]["prs-merged"] == 1
+
+
+def test_parse_metric_pairs_batch():
+    assert wl.parse_metric_pairs(["work-hours=8", "focus-hours=4.5", "energy=4"]) == [
+        ("work-hours", 8.0), ("focus-hours", 4.5), ("energy", 4.0)]
+
+
+def test_parse_metric_pairs_legacy_single():
+    assert wl.parse_metric_pairs(["work-hours", "8"]) == [("work-hours", 8.0)]
+
+
+def test_parse_metric_pairs_trailing_unit_in_batch():
+    assert wl.parse_metric_pairs(["sleep-hours=7.2h"]) == [("sleep-hours", 7.2)]
+
+
+def test_parse_metric_pairs_bad_value_names_token():
+    with pytest.raises(ValueError) as e:
+        wl.parse_metric_pairs(["focus-hours=lots"])
+    assert "focus-hours=lots" in str(e.value)
+
+
+def test_parse_metric_pairs_bad_name_rejected():
+    with pytest.raises(ValueError):
+        wl.parse_metric_pairs(["=8"])
+
+
+def test_parse_metric_pairs_mixed_form_rejected():
+    with pytest.raises(ValueError):
+        wl.parse_metric_pairs(["a=1", "b", "2"])
+
+
+def test_parse_metric_pairs_empty_rejected():
+    with pytest.raises(ValueError):
+        wl.parse_metric_pairs([])
+
+
+def test_parse_metric_pairs_duplicates_preserved_in_order():
+    assert wl.parse_metric_pairs(["work-hours=8", "work-hours=9"]) == [
+        ("work-hours", 8.0), ("work-hours", 9.0)]

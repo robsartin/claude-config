@@ -402,3 +402,120 @@ def test_parse_metric_pairs_empty_rejected():
 def test_parse_metric_pairs_duplicates_preserved_in_order():
     assert wl.parse_metric_pairs(["work-hours=8", "work-hours=9"]) == [
         ("work-hours", 8.0), ("work-hours", 9.0)]
+
+
+# --- jira-pull: cross-project Jira search (bypasses the CLI's project scoping) ---
+
+JIRA_CFG = """auth_type: basic
+login: someone@example.com
+project:
+    key: SOMEPROJ
+    type: classic
+server: https://example.atlassian.net
+timezone: America/Chicago
+"""
+
+
+def test_read_jira_cli_config_extracts_server_and_login(tmp_path):
+    p = tmp_path / ".config.yml"
+    p.write_text(JIRA_CFG)
+    cfg = wl.read_jira_cli_config(str(p))
+    assert cfg == {"login": "someone@example.com",
+                   "server": "https://example.atlassian.net"}
+
+
+def test_read_jira_cli_config_missing_file_returns_empty(tmp_path):
+    assert wl.read_jira_cli_config(str(tmp_path / "nope.yml")) == {}
+
+
+def test_read_jira_cli_config_ignores_indented_lookalikes(tmp_path):
+    # `key:`/`name:` are nested under project: — only top-level keys count.
+    p = tmp_path / ".config.yml"
+    p.write_text("project:\n    server: https://wrong.example\nserver: https://right.example\n")
+    assert wl.read_jira_cli_config(str(p))["server"] == "https://right.example"
+
+
+def test_jira_pull_skips_without_token(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(wl, "read_jira_cli_config",
+                        lambda *a, **k: {"server": "https://x", "login": "y"})
+    monkeypatch.delenv("JIRA_API_TOKEN", raising=False)
+    assert wl._cmd_jira_pull(["--since", "2026-07-27"]) == 0
+    out = capsys.readouterr()
+    assert json.loads(out.out) == []
+    assert "JIRA_API_TOKEN" in out.err
+
+
+def test_jira_pull_skips_without_config(monkeypatch, capsys):
+    monkeypatch.setattr(wl, "read_jira_cli_config", lambda *a, **k: {})
+    monkeypatch.setenv("JIRA_API_TOKEN", "tok")
+    assert wl._cmd_jira_pull(["--since", "2026-07-27"]) == 0
+    out = capsys.readouterr()
+    assert json.loads(out.out) == []
+    assert "server" in out.err and "login" in out.err
+
+
+def test_jira_pull_degrades_on_api_failure(monkeypatch, capsys):
+    monkeypatch.setattr(wl, "read_jira_cli_config",
+                        lambda *a, **k: {"server": "https://x", "login": "y"})
+    monkeypatch.setenv("JIRA_API_TOKEN", "tok")
+
+    def boom(*a, **k):
+        raise OSError("no route to host")
+    monkeypatch.setattr(wl, "jira_search", boom)
+    assert wl._cmd_jira_pull(["--since", "2026-07-27"]) == 0   # never a crash
+    out = capsys.readouterr()
+    assert json.loads(out.out) == []
+    assert "no route to host" in out.err
+
+
+def test_jira_pull_query_is_not_project_scoped(monkeypatch, capsys):
+    """The whole point: no `project = ...` clause, so every project is searched."""
+    seen = {}
+    monkeypatch.setattr(wl, "read_jira_cli_config",
+                        lambda *a, **k: {"server": "https://x", "login": "y"})
+    monkeypatch.setenv("JIRA_API_TOKEN", "tok")
+
+    def fake(server, login, token, jql, fields, **k):
+        seen.update(jql=jql, fields=fields)
+        return {"issues": []}
+    monkeypatch.setattr(wl, "jira_search", fake)
+    wl._cmd_jira_pull(["--since", "2026-07-27"])
+    capsys.readouterr()
+    assert "project" not in seen["jql"].lower()
+    assert "assignee = currentUser()" in seen["jql"]
+    assert "updated >= '2026-07-27'" in seen["jql"]
+    # statuscategorychangedate would misdate unresolved tickets out of range.
+    assert "statuscategorychangedate" not in seen["fields"]
+    assert "resolutiondate" in seen["fields"] and "updated" in seen["fields"]
+
+
+def test_jira_pull_normalizes_multiple_projects(monkeypatch, capsys):
+    monkeypatch.setattr(wl, "read_jira_cli_config",
+                        lambda *a, **k: {"server": "https://x", "login": "y"})
+    monkeypatch.setenv("JIRA_API_TOKEN", "tok")
+    monkeypatch.setattr(wl, "jira_search", lambda *a, **k: {"issues": [
+        {"key": "AAA-1", "fields": {"summary": "one", "updated": "2026-07-30T10:00:00.000+0000"}},
+        {"key": "BBB-2", "fields": {"summary": "two", "resolutiondate": "2026-07-28T09:00:00.000+0000",
+                                    "updated": "2026-07-31T09:00:00.000+0000"}},
+    ]})
+    wl._cmd_jira_pull(["--since", "2026-07-27"])
+    got = json.loads(capsys.readouterr().out)
+    assert [e["ref"] for e in got] == ["AAA-1", "BBB-2"]
+    assert got[0]["date"] == "2026-07-30"          # falls back to updated
+    assert got[1]["date"] == "2026-07-28"          # resolutiondate wins
+    assert all(e["type"] == "shipped" for e in got)
+
+
+def test_jira_pull_custom_user_expression(monkeypatch, capsys):
+    seen = {}
+    monkeypatch.setattr(wl, "read_jira_cli_config",
+                        lambda *a, **k: {"server": "https://x", "login": "y"})
+    monkeypatch.setenv("JIRA_API_TOKEN", "tok")
+
+    def fake(server, login, token, jql, fields, **k):
+        seen["jql"] = jql
+        return {"issues": []}
+    monkeypatch.setattr(wl, "jira_search", fake)
+    wl._cmd_jira_pull(["--since", "2026-07-27", "--user", '"a@b.c"'])
+    capsys.readouterr()
+    assert 'assignee = "a@b.c"' in seen["jql"]

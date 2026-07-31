@@ -159,9 +159,83 @@ def parse_gitlab_mrs(raw):
     return out
 
 
+JIRA_CLI_CONFIG = "~/.config/.jira/.config.yml"
+
+
+def read_jira_cli_config(path=JIRA_CLI_CONFIG):
+    """Pull `server` and `login` out of the jira CLI's own config. Machine-local by
+    design — the host and account never live in this repo. Returns {} if unreadable."""
+    p = os.path.expanduser(path)
+    if not os.path.exists(p):
+        return {}
+    out = {}
+    with open(p) as f:
+        for line in f:
+            m = re.match(r"^(server|login):\s*(\S+)\s*$", line)
+            if m:
+                out[m.group(1)] = m.group(2)
+    return out
+
+
+def jira_search(server, login, token, jql, fields, max_results=100):
+    """Cross-project JQL search against Jira Cloud. The `jira` CLI can't do this —
+    its --jql runs "in a given project context", so it silently returns nothing for
+    work outside the configured default project. Returns the raw response dict."""
+    import base64
+    import urllib.parse
+    import urllib.request
+
+    qs = urllib.parse.urlencode({"jql": jql, "fields": fields, "maxResults": max_results})
+    url = f"{server.rstrip('/')}/rest/api/3/search/jql?{qs}"
+    auth = base64.b64encode(f"{login}:{token}".encode()).decode()
+    req = urllib.request.Request(url, headers={
+        "Authorization": f"Basic {auth}",
+        "Accept": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read().decode())
+
+
+def _cmd_jira_pull(rest):
+    """Emit normalized shipped-entries for every Jira project the user touched in
+    range. Any missing prerequisite -> `[]` on stdout + a note on stderr, never a
+    crash: the reports must still work without Jira access."""
+    import argparse
+    ap = argparse.ArgumentParser(prog="worklog.py jira-pull")
+    ap.add_argument("--since", required=True)
+    ap.add_argument("--user", default="currentUser()",
+                    help="JQL assignee expression (default: currentUser())")
+    a = ap.parse_args(rest)
+
+    cfg = read_jira_cli_config()
+    token = os.environ.get("JIRA_API_TOKEN", "")
+    missing = [n for n, v in (("server", cfg.get("server")), ("login", cfg.get("login")),
+                              ("JIRA_API_TOKEN", token)) if not v]
+    if missing:
+        print(json.dumps([]))
+        print(f"worklog: jira-pull skipped — missing {', '.join(missing)} "
+              f"(expected in {JIRA_CLI_CONFIG} / the environment).", file=sys.stderr)
+        return 0
+
+    jql = f"assignee = {a.user} AND updated >= '{a.since}' ORDER BY updated DESC"
+    # resolutiondate + updated only. statuscategorychangedate is deliberately NOT
+    # requested: on an unresolved ticket it's when the ticket entered its current
+    # category, which is not a "shipped" date and would drag entries out of range.
+    try:
+        data = jira_search(cfg["server"], cfg["login"], token, jql,
+                           "summary,resolutiondate,updated")
+    except Exception as e:  # network/auth/API failure -> degrade, don't crash
+        print(json.dumps([]))
+        print(f"worklog: jira-pull failed ({type(e).__name__}: {e}).", file=sys.stderr)
+        return 0
+    print(json.dumps(parse_jira_list(data), indent=2))
+    return 0
+
+
 def main(argv):
     if not argv:
-        print("usage: worklog.py <log|entries> ...", file=sys.stderr)
+        print("usage: worklog.py <log|entries|jira-pull|parse-jira|parse-gitlab|metric|metrics> ...",
+              file=sys.stderr)
         return 2
     cmd, rest = argv[0], argv[1:]
     if cmd == "log":
@@ -177,6 +251,8 @@ def main(argv):
         content = open(path).read() if os.path.exists(path) else ""
         print(json.dumps(entries_in_range(content, a.since, a.until), indent=2))
         return 0
+    if cmd == "jira-pull":
+        return _cmd_jira_pull(rest)
     if cmd in ("parse-jira", "parse-gitlab"):
         text = sys.stdin.read().strip()
         try:

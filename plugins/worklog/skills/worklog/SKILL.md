@@ -29,10 +29,8 @@ catches work that never got hand-logged. Skip silently if the tools aren't avail
 reports still work from `Worklog.md` alone.
 
 ```bash
-# Jira tickets you touched in the range (use a plain date, not -14d, which parses as flags).
-# Scoped to your Jira config's default project; for cross-project use --jql instead.
-jira issue list -a"$(jira me)" --updated-after <SINCE> --raw \
-  | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-jira
+# Jira tickets you touched in the range — ALL projects, not just one.
+python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" jira-pull --since <SINCE>
 # GitLab MRs you merged in the range, across projects on your work GitLab host.
 # glab must be authed to that host (its default). For a self-hosted instance, either make it
 # glab's default host or add `--hostname <your-gitlab-host>` to the call.
@@ -40,8 +38,21 @@ glab api "/merge_requests?scope=created_by_me&state=merged&updated_after=<SINCE>
   | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-gitlab
 ```
 
-Cross-project Jira alternative:
-`jira issue list --jql "assignee = currentUser() AND updated >= '<SINCE>'" --raw | … parse-jira`.
+`jira-pull` talks to the Jira Cloud REST API directly rather than shelling out to the `jira`
+CLI, because the CLI cannot search across projects — both `--project` and `-q/--jql` run "in a
+given project context", so any work outside the CLI's configured default project comes back as
+an **empty result with no error**. That silence is the bug: a weekly report would simply omit
+your other projects. `jira-pull` sends no `project` clause at all.
+
+It reads `server` and `login` from the `jira` CLI's own config (`~/.config/.jira/.config.yml`)
+and the token from `$JIRA_API_TOKEN` — machine-local, so no host or account ever lands in this
+repo. Missing config, missing token, or a network/auth failure all print `[]` and a one-line note
+on stderr and exit 0, so the reports still work without Jira access. Use `--user` to pass a
+different JQL assignee expression (default `currentUser()`).
+
+It requests only `resolutiondate` and `updated`. `statuscategorychangedate` is deliberately
+excluded: on an unresolved ticket it records when the ticket entered its current category, which
+is not a shipped date and would push in-range entries out of the report's window.
 
 Both emit normalized `{date, type: "shipped", ref, text}` entries. If a `ref` from the pull
 already appears in the hand-logged entries, prefer the hand-logged one (it has your context) and

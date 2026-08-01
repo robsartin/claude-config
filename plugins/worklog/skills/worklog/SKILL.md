@@ -87,10 +87,10 @@ ever auto-sent.
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric <name=value> [<name=value> ...] [--date YYYY-MM-DD]
 # one reading, or a whole day at once:
-python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric work-hours=8 focus-hours=4.5 energy=4
+python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric work-hours=8 sleep-hours=7.2 energy=4
 ```
 
-e.g. `metric work-hours 8`, `metric focus-hours 4.5`, `metric sleep-hours 7.2`, `metric energy 4`
+e.g. `metric work-hours 8`, `metric sleep-hours 7.2`, `metric energy 4`
 (`work-hours` is a good work KPI to surface in the reports). The value must be
 numeric (a trailing unit like `7.2h` is fine — the number is kept). Re-recording the same metric
 on the same day **replaces** it (a reading, not an event). Mentoring/assists are logged as
@@ -108,9 +108,22 @@ for a single reading.
    It returns each metric's points, a `summary` (latest / total / avg / min / max / count), and a
    `sparkline`, plus `derived` counts: `help-count` (logged `help` events) and `prs-merged`
    (logged `shipped` events — a local proxy until the Jira/GitLab factual pull is wired in).
-3. Draft a short report from ONLY that data — one line per metric with its sparkline and latest
-   vs average, then the derived counts. If the range is empty, say "no metrics in <range>";
-   never invent readings.
+3. Draft a report from ONLY that data — a table (one row per metric) plus the derived counts:
+
+   ```markdown
+   | Metric | Total | Daily avg | Trend |
+   | --- | --- | --- | --- |
+   | work-hours | 42.5h | 8.5 | ▁▃▅▇ |
+   | sleep-hours | 49.0h | 7.0 | ▅▄▆▇ |
+   | energy | — | 4.0 | ▃▄▅ |
+
+   Derived: help-count 3, prs-merged 2
+   ```
+
+   **Total column rule:** fill Total only for metrics whose name ends in `-hours` (show
+   `summary.total` with an `h` suffix, e.g. `42.5h`); every other metric shows a dash (`—`). Daily
+   avg is `summary.avg`; Trend is the metric's `sparkline`. If the range is empty, say
+   "no metrics in <range>"; never invent readings.
 4. Write the draft to `<vaultPath>/<reportsDir>/Metrics-<YYYY>-W<ww>.md` for the user to read.
    Do not send it. Professional, factual — do not use the personal `voice` skill.
 
@@ -126,12 +139,14 @@ as the report**:
 ```markdown
 ## Metrics (curate before sharing)
 
-- work-hours: 42.5 total over 5 days, 8.5/day avg
-- focus-hours: 21.0 total over 5 days, 4.2/day avg
-- energy: 4.0/day avg (min 3, max 5)
+| Metric | Total | Daily avg |
+| --- | --- | --- |
+| work-hours | 42.5h | 8.5 |
+| sleep-hours | 49.0h | 7.0 |
+| energy | — | 4.0 |
 ```
 
-One line per metric with readings in range: `total` + daily average, where the day count is the
-metric's `summary.count`. For a rating-style metric where a sum is meaningless (e.g. `energy`),
-show the daily average (and min–max) and omit the total. The header tells the reader to trim it
+One row per metric with readings in range. **Total column rule:** fill Total only for metrics
+whose name ends in `-hours` (show `summary.total` with an `h` suffix, e.g. `42.5h`); every other
+metric shows a dash (`—`). Daily avg is `summary.avg`. The header tells the reader to trim it
 before sharing; never fabricate readings.

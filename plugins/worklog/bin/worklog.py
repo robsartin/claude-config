@@ -347,7 +347,7 @@ def parse_metric_pairs(tokens):
     if len(tokens) == 2 and not any(has_eq):
         name, raw = tokens
         return [(_validate_name(name, name), _validate_value(raw, raw))]
-    raise ValueError("use name=value tokens, e.g. work-hours=8 focus-hours=4.5")
+    raise ValueError("use name=value tokens, e.g. work-hours=8 sleep-hours=7.2")
 
 
 def _cmd_metric(rest):

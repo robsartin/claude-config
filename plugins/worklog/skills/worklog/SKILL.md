@@ -111,6 +111,34 @@ call; if any token is malformed or non-numeric the **whole batch is rejected** a
 written, so a corrected line can be re-entered. The bare `metric <name> <value>` form still works
 for a single reading.
 
+### Metric trend charts
+
+Below any metrics table, render each metric's trend as a chart, so a reader sees the shape at a
+glance while the table keeps the exact numbers. For **every metric with 2 or more readings in
+range**, emit one fenced `mermaid` `xychart-beta` line chart from its `points` (the
+`[date, value]` pairs, already date-sorted):
+
+- **title** — the metric name.
+- **x-axis** — each point's date as a quoted `"MM-DD"` label, in order.
+- **y-axis** — `"hours"` for a `-hours` metric, otherwise the metric name. No explicit min/max;
+  let it auto-scale to the data.
+- **line** — the values in date order.
+
+A metric with a single reading gets **no chart** (one point is not a trend) but still appears as a
+table row. Example for `work-hours` read on five days (shown indented so the fence is literal):
+
+    ```mermaid
+    xychart-beta
+        title "work-hours"
+        x-axis ["08-04", "08-05", "08-06", "08-07", "08-08"]
+        y-axis "hours"
+        line [8, 7.5, 9, 8, 6]
+    ```
+
+`xychart-beta` is a mermaid experimental type: it renders in recent Obsidian reading view (the
+report's home) but not everywhere, so the table above it stays as the plain-text fallback. Never
+fabricate points — chart only the readings the `metrics` pull returned.
+
 ### Metrics report
 
 1. Resolve the range (default the current week).
@@ -135,7 +163,9 @@ for a single reading.
    `summary.total` with an `h` suffix, e.g. `42.5h`); every other metric shows a dash (`—`). Daily
    avg is `summary.avg`; Trend is the metric's `sparkline`. If the range is empty, say
    "no metrics in <range>"; never invent readings.
-4. Write the draft to `<vaultPath>/<reportsDir>/Metrics-<YYYY>-W<ww>.md` for the user to read.
+4. Below the table, append the **Metric trend charts** (see above) for the same metrics. The
+   inline `sparkline` column stays as the compact/plain-text view; the charts are the richer view.
+5. Write the draft to `<vaultPath>/<reportsDir>/Metrics-<YYYY>-W<ww>.md` for the user to read.
    Do not send it. Professional, factual — do not use the personal `voice` skill.
 
 ### Report metrics section (weekly & perf)
@@ -145,7 +175,7 @@ as the report**:
 
 1. Pull the data: `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metrics --since <D> --until <D>`.
 2. If no metric has readings in range, **omit the section entirely** — no empty header.
-3. Otherwise append it as the **last** block of the draft:
+3. Otherwise append it as the **last** section of the draft (table, then charts):
 
 ```markdown
 ## Metrics (curate before sharing)
@@ -161,3 +191,7 @@ One row per metric with readings in range. **Total column rule:** fill Total onl
 whose name ends in `-hours` (show `summary.total` with an `h` suffix, e.g. `42.5h`); every other
 metric shows a dash (`—`). Daily avg is `summary.avg`. The header tells the reader to trim it
 before sharing; never fabricate readings.
+
+Below the table, append the **Metric trend charts** (see above) for the same metrics — one chart
+per metric with 2+ readings. They fall inside the same "curate before sharing" section, so the
+reader trims table and charts together.

@@ -12,7 +12,10 @@ _HEADING = "# Architecture Decision Records"
 _FRONTMATTER_DELIM = "---\n"
 
 # Fixed rendering order; only axes with at least one ADR produce a section.
+# "project" leads: it is the axis hand-authored, repo-specific ADRs use, so a repo's
+# own decisions read above the pack-emitted baseline. No pack declares it.
 _AXIS_ORDER = (
+    "project",
     "universal",
     "language",
     "framework",
@@ -23,6 +26,7 @@ _AXIS_ORDER = (
     "interaction",
 )
 _AXIS_DISPLAY_NAMES = {
+    "project": "Project",
     "universal": "Universal",
     "language": "Language",
     "framework": "Framework",
@@ -49,8 +53,8 @@ class _AdrEntry(NamedTuple):
 def build_index(adr_dir: StrPath) -> Path:
     """Write ``README.md`` grouping every ``NNNN-*.md`` ADR by axis, ordered.
 
-    Groups follow a fixed axis order (universal, language, framework, app-shape,
-    ui-tech, library, concern, interaction); only axes with at least one ADR are
+    Groups follow a fixed axis order (project, universal, language, framework,
+    app-shape, ui-tech, library, concern, interaction); only axes with at least one ADR are
     rendered. Within a group, ADRs stay in filename order. Deterministic: the same
     input directory always produces the same output.
     """

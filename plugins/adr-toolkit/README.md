@@ -28,7 +28,7 @@ resolve_selection  → expand selected packs by their depends_on edges (transiti
 resolve_interactions → add a pairwise interaction ADR only when both packs are selected
 order_packs        → order by axis (universal → language → framework → app-shape → …)
 emit               → render {{token}} templates, number sequentially, write docs/adr/NNNN-*.md
-build_index        → (re)generate docs/adr/README.md, grouped by axis with status/summary/related
+build_index        → (re)generate docs/adr/README.md, grouped by axis (project first) with status/summary/related
 ```
 
 `scaffold()` composes these; `cli.main()` / the `adr-toolkit` console script is
@@ -128,6 +128,24 @@ related: []
   1–2 theme tags.
 - `supersedes` and `related` are empty lists in the template; a project may fill
   them in by hand once an ADR is superseded by or related to another.
+
+### Hand-authored ADRs: the `project` axis
+
+Packs emit a *baseline*. The decisions that make a repo what it is — its data
+model, its engine choice, its core domain invariants — are written by hand, and
+they have no pack axis to claim. Tag them `project`:
+
+```yaml
+tags: [project, <theme>, ...]
+```
+
+`build_index` renders those under a **Project** heading placed **first**, above
+`Universal`, so a repo's own decisions lead its index instead of trailing the
+baseline. `Uncategorized` stays the genuine fallback for ADRs with no
+frontmatter or an unrecognized axis.
+
+`project` is an index-only axis: no pack declares it, and the pack linter only
+walks `packs/`, so hand-authored ADRs are never linted against the pack rules.
 
 ## Examples
 

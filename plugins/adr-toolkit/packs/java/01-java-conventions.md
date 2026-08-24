@@ -17,7 +17,7 @@ its language level and formatting standard pinned so Java repositories are consi
 
 On top of the JVM baseline:
 
-- Target a **current Java LTS** (21 unless the project states otherwise), set via the
+- Target a **current Java LTS** (25 unless the project states otherwise), set via the
   Gradle toolchain.
 - **google-java-format** (run through Spotless) is the formatting standard.
 - **ArchUnit** provides architecture tests (boundaries, no package cycles).
@@ -30,7 +30,7 @@ On top of the JVM baseline:
 - **google-java-format's competitors (e.g. Eclipse formatter, Palantir Java Format)** — also
   viable through Spotless, but google-java-format's opinionated, zero-config style avoids
   bikeshedding over settings.
-- **An older LTS (e.g. Java 17)** — still supported, but targeting the current LTS gives access
+- **An older LTS (e.g. Java 21)** — still supported, but targeting the current LTS gives access
   to newer language features (records, pattern matching) this ADR relies on.
 - **Lombok for boilerplate reduction** — common in older Java codebases, but records and modern
   language features cover the same ground natively, without a compile-time annotation processor.

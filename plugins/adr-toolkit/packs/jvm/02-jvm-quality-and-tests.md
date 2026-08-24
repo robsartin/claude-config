@@ -19,7 +19,8 @@ tests. JVM projects need concrete tools so those requirements are measurable and
 Configured in Gradle and run in CI:
 
 - **Formatting** via **Spotless**, failing the build on violations.
-- **Testing** with **JUnit 5**. Fast **unit tests** are the default source set.
+- **Testing** with **JUnit 6** — the unified `junit-bom` keeps the Platform, Jupiter, and
+  Vintage artifacts on a single 6.x version. Fast **unit tests** are the default source set.
 - **Integration tests** exercise real dependencies via **Testcontainers** (e.g. Postgres)
   and live in a separate source set / tag so they don't slow the unit loop.
 - **Coverage** via **JaCoCo**, enforcing the universal thresholds — **line/instruction
@@ -29,8 +30,9 @@ Configured in Gradle and run in CI:
 
 ## Alternatives considered
 
-- **JUnit 4** — still widely used, but lacks JUnit 5's extension model and parameterized-test
-  ergonomics, which the layered unit/integration split relies on.
+- **JUnit 5** — the prior default and still fully supported, but JUnit 6 unifies Platform and
+  Jupiter under one BOM version and sets a Java 17 baseline, which the current-LTS toolchain
+  already clears. (JUnit 4 remains reachable through the Vintage engine for legacy tests.)
 - **In-memory fakes instead of Testcontainers** (e.g. H2 for Postgres): faster to start, but
   they drift from production behavior and would undermine trust in integration tests.
 - **Checkstyle/PMD instead of ArchUnit or Konsist** for boundaries: catches style issues, but

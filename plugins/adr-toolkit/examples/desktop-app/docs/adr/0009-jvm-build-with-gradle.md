@@ -43,3 +43,6 @@ tooling (formatting, coverage, arch tests) can be applied the same way everywher
   silently change the build.
 - The pinned JDK must be available to Gradle (auto-provisioned or installed); a
   system-default JDK that Gradle can't launch on still needs an explicit workaround.
+- Running on or targeting a recent JDK (e.g. the current LTS, JDK 25) requires a Gradle
+  version that supports it (Gradle 9.1+); the committed wrapper pins that pairing, so the
+  supported combination is explicit rather than left to the contributor's local Gradle.

@@ -18,6 +18,9 @@ consistent.
 
 On top of the JVM baseline:
 
+- Pin the Gradle toolchain to the **current Java LTS (JDK 25)** and use **Kotlin ≥ 2.2**
+  (JUnit 6's minimum). Kotlin compiles and runs on JDK 25, but keep the Kotlin **`jvmTarget`
+  at 24** until **Kotlin 2.3** adds target-25 support.
 - **ktlint** (run through Spotless) provides Kotlin formatting and lint rules.
 - **Konsist** is preferred for architecture tests, being Kotlin-native, where the JVM
   baseline's ArchUnit is not already in use.
@@ -42,3 +45,5 @@ On top of the JVM baseline:
 - Architecture rules are expressed in Kotlin (Konsist) rather than a Java-oriented DSL.
 - Explicit API mode adds a little ceremony to library code in exchange for a controlled
   public surface.
+- Kotlin bytecode targets JDK 24 while the toolchain runs on JDK 25; raising `jvmTarget` to 25
+  once Kotlin 2.3 ships is a small, deliberate follow-up.

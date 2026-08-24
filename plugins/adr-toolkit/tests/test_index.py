@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from adr_toolkit.index import build_index
+from adr_toolkit.index import _AXIS_ORDER, build_index
+from adr_toolkit.manifest import load_manifest
+from adr_toolkit.selection import AXIS_ORDER
 
 _FRONTMATTER = """---
 status: {status}
@@ -299,3 +301,61 @@ def test_unknown_axis_tag_goes_to_uncategorized(tmp_path: Path) -> None:
     content = build_index(tmp_path).read_text()
     assert "## Uncategorized" in content
     assert "- [1. X](0001-x.md) — _Accepted_" in content
+
+
+def test_project_axis_groups_hand_authored_adrs_first(tmp_path: Path) -> None:
+    # Hand-authored, repo-specific ADRs tag themselves `project`; they belong at the
+    # top of the index, above the pack-emitted baseline — not in Uncategorized.
+    _write_adr(
+        tmp_path,
+        "0001-record-decisions.md",
+        title="1. Record decisions",
+        topic="record-decisions",
+        tags="universal, adr",
+    )
+    _write_adr(
+        tmp_path,
+        "0018-graph-engine.md",
+        title="18. Use Gremlin as the graph engine",
+        topic="graph-engine",
+        tags="project, graph",
+    )
+
+    content = build_index(tmp_path).read_text()
+
+    assert "## Uncategorized" not in content
+    assert content.index("## Project") < content.index("## Universal")
+    assert content.index(
+        "[18. Use Gremlin as the graph engine](0018-graph-engine.md)"
+    ) < content.index("## Universal")
+
+
+def test_project_axis_does_not_absorb_the_uncategorized_fallback(tmp_path: Path) -> None:
+    # Adding a real `project` group must leave Uncategorized as the genuine
+    # catch-all for ADRs with no or unrecognized axis.
+    _write_adr(
+        tmp_path,
+        "0001-graph-engine.md",
+        title="1. Use Gremlin as the graph engine",
+        topic="graph-engine",
+        tags="project, graph",
+    )
+    (tmp_path / "0002-legacy.md").write_text("# 2. A legacy decision\n\nbody\n")
+
+    content = build_index(tmp_path).read_text()
+
+    assert content.index("## Project") < content.index("## Uncategorized")
+    assert "- [2. A legacy decision](0002-legacy.md)" in content.split("## Uncategorized", 1)[1]
+
+
+def test_project_axis_is_index_only_and_not_a_pack_axis() -> None:
+    # The index's axis list deliberately diverges from selection's: "project" exists
+    # purely for hand-authored ADRs, so no pack declares it and the pack linter
+    # (which only walks packs/) never sees a project ADR. If a pack ever adopts the
+    # axis, selection.AXIS_ORDER must gain it too or order_packs will raise.
+    manifest = load_manifest(Path(__file__).resolve().parents[1] / "packs.yaml")
+
+    assert "project" not in {spec["axis"] for spec in manifest["packs"].values()}
+    assert "project" not in AXIS_ORDER
+    assert _AXIS_ORDER[0] == "project"
+    assert set(_AXIS_ORDER) - {"project"} == set(AXIS_ORDER)

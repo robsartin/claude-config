@@ -132,6 +132,23 @@ theirs); never silently drop anything — every skip appears in the report.
 
 Full rationale: [docs/design/2026-07-08-adr-reconciliation-design.md](../../docs/design/2026-07-08-adr-reconciliation-design.md).
 
+## Writing a repo's own ADRs
+
+Packs give a repo its baseline. The decisions that make it *this* repo — engine
+choice, data model, core domain invariants — are hand-authored, and they take the
+`project` axis:
+
+```yaml
+tags: [project, <theme>, ...]
+```
+
+`build_index` renders those under a **Project** heading first, above `Universal`,
+so a repo's own decisions lead its index. Anything with no frontmatter or an
+unrecognized axis still lands in `Uncategorized`. Regenerate the index after
+adding one; the pack linter never sees these files, so their frontmatter is on you
+— match the template shape (`status`, `date`, `topic`, `tags`, `supersedes`,
+`related`) so `related:` cross-links resolve.
+
 ## Current pack coverage
 
 `packs.yaml` is the source of truth — always check it rather than trusting this list.

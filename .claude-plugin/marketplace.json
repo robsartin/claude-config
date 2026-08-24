@@ -39,6 +39,11 @@
       "name": "worklog",
       "source": "./plugins/worklog",
       "description": "Capture work activity into an Obsidian Worklog.md and draft weekly/perf reports."
+    },
+    {
+      "name": "morning-brief",
+      "source": "./plugins/morning-brief",
+      "description": "Park the morning brief in 0 - Planning and roll the previous one into History."
     }
   ]
 }

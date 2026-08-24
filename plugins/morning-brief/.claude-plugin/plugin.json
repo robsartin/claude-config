@@ -1,0 +1,7 @@
+{
+  "name": "morning-brief",
+  "description": "Park the morning brief in 0 - Planning and roll the previous one into History, the way Today.md rotates.",
+  "author": { "name": "Rob Sartin" },
+  "keywords": ["morning", "brief", "obsidian", "planning", "notes", "archive"],
+  "commands": ["./commands/save-brief.md"]
+}

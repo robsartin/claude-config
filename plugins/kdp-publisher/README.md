@@ -127,11 +127,17 @@ Two things this exposed in the validator, both since fixed:
   1in is 900 DPI and warned. It now measures pixels ÷ printed size from the
   content stream.
 
-Caveats on the sample: it was 6 pages, so `min_pages` fails against KDP's
-24-page minimum, and its photos are 512px placed ~4.7in wide, so they print at
-108 DPI — a property of the source images, not of Google. Images drawn inside a
-Form XObject are reported as unmeasured rather than guessed at; this export had
-none. **The printed-proof confirmation is still outstanding.**
+The primary path was then exercised end to end on a 24-page export of the same
+document: the report came back clean apart from the image warning, `source` was
+`google`, and the written interior was **byte-identical** to the Google PDF —
+the validated export is passed through, not re-rendered.
+
+Caveats. Both the images and the page geometry are the author's to get right:
+the photos are 512px, so they print at 108–146 DPI depending on how wide they
+are placed, and an earlier draft of the same document exported at 8.5×11
+because Page setup had never been changed. Images drawn inside a Form XObject
+are reported as unmeasured rather than guessed at; none of these exports had
+any. **The printed-proof confirmation is still outstanding.**
 
 ## Development
 

@@ -1,0 +1,29 @@
+name: morning-brief
+
+on:
+  pull_request:
+    paths: ['plugins/morning-brief/**', '.github/workflows/morning-brief.yml']
+  push:
+    branches: [main]
+    paths: ['plugins/morning-brief/**', '.github/workflows/morning-brief.yml']
+
+defaults:
+  run:
+    working-directory: plugins/morning-brief
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install pytest ruff
+      - name: Lint (ruff check)
+        run: ruff check .
+      - name: Format check (ruff format)
+        run: ruff format --check .
+      - name: Unit tests
+        run: python3 -m pytest -q

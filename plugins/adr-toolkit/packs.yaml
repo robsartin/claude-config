@@ -20,6 +20,9 @@ packs:
   js-ts:
     axis: language
     path: js-ts
+  swift:
+    axis: language
+    path: swift
   spring-boot:
     axis: framework
     path: spring-boot
@@ -61,6 +64,10 @@ packs:
     axis: ui-tech
     path: compose
     depends_on: [jvm]
+  swiftui:
+    axis: ui-tech
+    path: swiftui
+    depends_on: [swift]
   d3:
     axis: library
     path: d3
@@ -88,6 +95,9 @@ packs:
   a11y-compose:
     axis: interaction
     path: interaction/a11y-compose
+  a11y-swiftui:
+    axis: interaction
+    path: interaction/a11y-swiftui
   i18n:
     axis: concern
     path: i18n
@@ -130,6 +140,8 @@ interactions:
     adr: a11y-svelte
   - when: [accessibility, compose]
     adr: a11y-compose
+  - when: [accessibility, swiftui]
+    adr: a11y-swiftui
   - when: [i18n, jvm]
     adr: i18n-jvm
   - when: [i18n, js-ts]

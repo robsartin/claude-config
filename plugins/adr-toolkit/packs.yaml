@@ -49,6 +49,10 @@ packs:
     axis: ui-tech
     path: vue
     depends_on: [js-ts]
+  svelte:
+    axis: ui-tech
+    path: svelte
+    depends_on: [js-ts]
   plain-js:
     axis: ui-tech
     path: plain-js
@@ -66,6 +70,9 @@ packs:
   d3-vue:
     axis: interaction
     path: interaction/d3-vue
+  d3-svelte:
+    axis: interaction
+    path: interaction/d3-svelte
   d3-plain:
     axis: interaction
     path: interaction/d3-plain
@@ -75,6 +82,9 @@ packs:
   a11y-vue:
     axis: interaction
     path: interaction/a11y-vue
+  a11y-svelte:
+    axis: interaction
+    path: interaction/a11y-svelte
   a11y-compose:
     axis: interaction
     path: interaction/a11y-compose
@@ -108,12 +118,16 @@ interactions:
     adr: d3-react
   - when: [d3, vue]
     adr: d3-vue
+  - when: [d3, svelte]
+    adr: d3-svelte
   - when: [d3, plain-js]
     adr: d3-plain
   - when: [accessibility, react]
     adr: a11y-react
   - when: [accessibility, vue]
     adr: a11y-vue
+  - when: [accessibility, svelte]
+    adr: a11y-svelte
   - when: [accessibility, compose]
     adr: a11y-compose
   - when: [i18n, jvm]

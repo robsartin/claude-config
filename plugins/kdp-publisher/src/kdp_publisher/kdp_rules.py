@@ -2,6 +2,7 @@
 (see reference_kdp_pdf_rules memory / Mise kdp package)."""
 
 BLEED_IN = 0.125
+MIN_IMAGE_DPI = 300
 MIN_PAGES = 24
 MIN_PAGES_SPINE_TEXT = 79
 SPINE_FOLD_SAFETY_IN = 0.0625

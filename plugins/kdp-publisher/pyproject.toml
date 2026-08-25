@@ -28,7 +28,7 @@ packages = ["src/kdp_publisher"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "scripts"]
 
 [tool.ruff]
 line-length = 100
@@ -51,6 +51,6 @@ branch = true
 omit = ["*/__main__.py"]
 
 [tool.coverage.report]
-# Universal quality gate: line > 80%, branch > 65%.
-fail_under = 80
+# The quality gate lives in scripts/check_coverage.py, which owns both thresholds
+# (fail_under is a single blended number and cannot express line AND branch).
 show_missing = true

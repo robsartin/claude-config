@@ -21,6 +21,7 @@ PAPER_THICKNESS_IN: dict[str, float] = {
 
 TRIMS_IN: dict[str, tuple[float, float]] = {
     "6x9": (6.0, 9.0),
+    "5.5x8.5": (5.5, 8.5),
     "5x8": (5.0, 8.0),
     "8.5x11": (8.5, 11.0),
 }

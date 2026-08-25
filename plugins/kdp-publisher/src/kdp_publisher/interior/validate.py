@@ -25,6 +25,10 @@ class ValidationReport:
 
 
 def _font_is_embedded(font_obj: dict[str, Any]) -> bool:
+    # Type3 glyphs are content-stream procedures carried in the PDF itself, so
+    # there is no font file to embed and /FontFile is absent by construction.
+    if font_obj.get("/Subtype") == "/Type3":
+        return bool(font_obj.get("/CharProcs"))
     desc = font_obj.get("/FontDescriptor", {})
     if any(k in desc for k in ("/FontFile", "/FontFile2", "/FontFile3")):
         return True
@@ -183,9 +187,10 @@ def validate_interior_pdf(pdf_bytes: bytes, trim: str) -> ValidationReport:
                 "image_dpi",
                 "warn",
                 f"an image prints at {min(dpis):.0f} DPI, under KDP's "
-                f"{r.MIN_IMAGE_DPI} DPI minimum. Google may have downsampled it; "
-                f"use a higher-resolution source, place it smaller, or use the "
-                f"render fallback.",
+                f"{r.MIN_IMAGE_DPI} DPI minimum. Google exports images at their "
+                f"source resolution, so replace the original with a "
+                f"higher-resolution one or place it smaller — re-rendering will "
+                f"not add detail.",
             )
         )
 

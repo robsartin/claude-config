@@ -199,3 +199,33 @@ def test_dpi_is_measured_on_merged_pages():
     assert check.status == "warn"
     assert "286" in check.message or "285" in check.message
     assert "could not determine" not in check.message
+
+
+def test_type3_font_is_self_contained_not_unembedded():
+    """Type3 glyphs are content-stream procedures inside the PDF itself.
+
+    There is no font file to embed, so /FontFile is absent by construction.
+    Google Docs emits Type3 fonts for bullets and drawings; counting them as
+    unembedded fails an otherwise-valid export.
+    """
+    type3 = {
+        "/Subtype": "/Type3",
+        "/CharProcs": {"/g0": object(), "/g1": object()},
+        "/FontMatrix": [0.00048828125, 0, 0, -0.00048828125, 0, 0],
+        "/FontDescriptor": {},
+    }
+
+    assert _font_is_embedded(type3) is True
+
+
+def test_type3_without_charprocs_is_still_reported():
+    """A Type3 with no glyph procedures has nothing to draw with — not a free pass."""
+    assert _font_is_embedded({"/Subtype": "/Type3", "/FontDescriptor": {}}) is False
+
+
+def test_5_5x8_5_is_a_supported_trim():
+    """KDP's 5.5x8.5 is one of its most common trims."""
+    report = validate_interior_pdf(_blank_pdf(5.5, 8.5, 30), "5.5x8.5")
+    trim_check = next(c for c in report.checks if c.name == "trim")
+
+    assert trim_check.status == "pass"

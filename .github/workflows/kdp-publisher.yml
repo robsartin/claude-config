@@ -32,5 +32,10 @@ jobs:
         run: ruff format --check .
       - name: Types (mypy --strict)
         run: mypy
-      - name: Tests + coverage gate (total > 80%, branch-inclusive)
-        run: coverage run -m pytest && coverage report
+      - name: Tests
+        run: coverage run -m pytest
+      - name: Coverage gate (line > 80%, branch > 65%)
+        run: |
+          coverage report
+          coverage json -o coverage.json
+          python scripts/check_coverage.py coverage.json

@@ -45,6 +45,10 @@ packs:
     axis: ui-tech
     path: react
     depends_on: [js-ts]
+  vue:
+    axis: ui-tech
+    path: vue
+    depends_on: [js-ts]
   plain-js:
     axis: ui-tech
     path: plain-js
@@ -59,12 +63,18 @@ packs:
   d3-react:
     axis: interaction
     path: interaction/d3-react
+  d3-vue:
+    axis: interaction
+    path: interaction/d3-vue
   d3-plain:
     axis: interaction
     path: interaction/d3-plain
   a11y-react:
     axis: interaction
     path: interaction/a11y-react
+  a11y-vue:
+    axis: interaction
+    path: interaction/a11y-vue
   a11y-compose:
     axis: interaction
     path: interaction/a11y-compose
@@ -96,10 +106,14 @@ packs:
 interactions:
   - when: [d3, react]
     adr: d3-react
+  - when: [d3, vue]
+    adr: d3-vue
   - when: [d3, plain-js]
     adr: d3-plain
   - when: [accessibility, react]
     adr: a11y-react
+  - when: [accessibility, vue]
+    adr: a11y-vue
   - when: [accessibility, compose]
     adr: a11y-compose
   - when: [i18n, jvm]

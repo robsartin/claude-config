@@ -41,6 +41,7 @@ source = ["adr_toolkit"]
 branch = true
 
 [tool.coverage.report]
-# Universal U5 policy: line > 80%, branch > 65%. The Python pack may tighten.
-fail_under = 80
+# The U5 gate lives in scripts/check_coverage.py, which owns both thresholds
+# (fail_under is a single blended number and cannot express line AND branch).
+# The Python pack may tighten them.
 show_missing = true

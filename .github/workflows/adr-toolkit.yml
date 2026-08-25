@@ -33,6 +33,7 @@ jobs:
         run: python scripts/lint_adrs.py
       - name: Coverage gate (line > 80%, branch > 65%)
         run: |
+          coverage report
           coverage json -o coverage.json
           python scripts/check_coverage.py coverage.json
       - name: Examples are up to date

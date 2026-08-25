@@ -15,8 +15,9 @@ MessageFormat and integrates with the frontend. Selecting both i18n and js-ts se
 
 ## Decision
 
-- **Messages** use **ICU MessageFormat** via **FormatJS** (`intl-messageformat`, or the
-  framework binding — `react-intl` with React, `@formatjs/vue-intl` with Vue), so
+- **Messages** use **ICU MessageFormat** via **FormatJS** — a framework binding where one
+  exists (`react-intl` with React, `@formatjs/vue-intl` with Vue), otherwise
+  `intl-messageformat` directly (Svelte has no official binding, and needs none) — so
   plural/select syntax matches the baseline.
 - **Formatting** uses the built-in **`Intl`** APIs (`Intl.DateTimeFormat`,
   `Intl.NumberFormat`, `Intl.PluralRules`) with an explicit locale.

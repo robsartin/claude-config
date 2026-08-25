@@ -1,0 +1,20 @@
+[project]
+name = "morning-brief"
+version = "0.1.0"
+description = "Park the morning brief in 0 - Planning and roll the previous one into History"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["bin"]
+
+[tool.ruff]
+line-length = 100
+src = ["bin", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

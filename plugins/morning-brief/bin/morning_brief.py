@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """morning-brief: park today's brief in 0 - Planning and roll the old one into
 History, the same way Today.md rotates. Stdlib only."""
+
 import argparse
 import copy
 import datetime
@@ -99,8 +100,12 @@ def rotate(cfg, new_content, today=None, dry_run=False):
     firing twice in one morning should leave one note, not two."""
     today = today or datetime.date.today()
     current = brief_path(cfg)
-    result = {"archived": None, "archived_from_date": None,
-              "written": current, "skipped_reason": None}
+    result = {
+        "archived": None,
+        "archived_from_date": None,
+        "written": current,
+        "skipped_reason": None,
+    }
 
     if os.path.exists(current):
         old = _read(current)
@@ -132,8 +137,9 @@ def rotate(cfg, new_content, today=None, dry_run=False):
 
 def _cmd_save(rest):
     ap = argparse.ArgumentParser(prog="morning_brief.py save")
-    ap.add_argument("--file", default=None,
-                    help="markdown file to install as today's brief (default: stdin)")
+    ap.add_argument(
+        "--file", default=None, help="markdown file to install as today's brief (default: stdin)"
+    )
     ap.add_argument("--date", default=None, help="treat this as today (YYYY-MM-DD)")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(rest)
@@ -143,7 +149,9 @@ def _cmd_save(rest):
         try:
             today = datetime.date.fromisoformat(a.date)
         except ValueError:
-            print(f"morning-brief: invalid --date '{a.date}' (expected YYYY-MM-DD)", file=sys.stderr)
+            print(
+                f"morning-brief: invalid --date '{a.date}' (expected YYYY-MM-DD)", file=sys.stderr
+            )
             return 2
 
     content = _read(a.file) if a.file else sys.stdin.read()
@@ -154,8 +162,10 @@ def _cmd_save(rest):
     cfg = load_config(_default_config_path())
     planning = vault_path(cfg, cfg["planningDir"])
     if not os.path.isdir(planning):
-        print(f"morning-brief: planning dir missing ({planning}) — configure "
-              f"morningBrief.vaultPath.", file=sys.stderr)
+        print(
+            f"morning-brief: planning dir missing ({planning}) — configure morningBrief.vaultPath.",
+            file=sys.stderr,
+        )
         return 1
 
     r = rotate(cfg, content, today=today, dry_run=a.dry_run)
@@ -174,12 +184,17 @@ def _cmd_paths(rest):
     a = ap.parse_args(rest)
     when = datetime.date.fromisoformat(a.date) if a.date else datetime.date.today()
     cfg = load_config(_default_config_path())
-    print(json.dumps({
-        "config": _default_config_path(),
-        "brief": brief_path(cfg),
-        "archiveDir": archive_dir(cfg, when),
-        "archiveName": archive_name(cfg, when) + ".md",
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "config": _default_config_path(),
+                "brief": brief_path(cfg),
+                "archiveDir": archive_dir(cfg, when),
+                "archiveName": archive_name(cfg, when) + ".md",
+            },
+            indent=2,
+        )
+    )
     return 0
 
 

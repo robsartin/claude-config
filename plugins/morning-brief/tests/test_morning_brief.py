@@ -3,8 +3,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 import morning_brief as mb
 
@@ -25,6 +23,7 @@ def note(date, body="# hello\n"):
 
 # --- config ---------------------------------------------------------------
 
+
 def test_load_config_missing_returns_defaults(tmp_path):
     cfg = mb.load_config(str(tmp_path / "nope.json"))
     assert cfg == mb.DEFAULTS
@@ -35,11 +34,12 @@ def test_load_config_reads_morning_brief_section(tmp_path):
     p = tmp_path / "start-work.json"
     p.write_text(json.dumps({"morningBrief": {"vaultPath": "/v"}, "worklog": {"vaultPath": "/w"}}))
     cfg = mb.load_config(str(p))
-    assert cfg["vaultPath"] == "/v"                 # from the morningBrief section
-    assert cfg["briefFile"] == "Morning Brief.md"   # default preserved
+    assert cfg["vaultPath"] == "/v"  # from the morningBrief section
+    assert cfg["briefFile"] == "Morning Brief.md"  # default preserved
 
 
 # --- date + naming --------------------------------------------------------
+
 
 def test_note_date_reads_frontmatter():
     assert mb.note_date(note("2026-08-24")) == datetime.date(2026, 8, 24)
@@ -77,14 +77,17 @@ def test_archive_name_matches_the_daily_convention(tmp_path):
 
 def test_free_path_suffixes_on_collision(tmp_path):
     (tmp_path / "brief - 20260824.md").write_text("x")
-    assert mb.free_path(str(tmp_path), "brief - 20260824") == \
-        str(tmp_path / "brief - 20260824 (2).md")
+    assert mb.free_path(str(tmp_path), "brief - 20260824") == str(
+        tmp_path / "brief - 20260824 (2).md"
+    )
     (tmp_path / "brief - 20260824 (2).md").write_text("x")
-    assert mb.free_path(str(tmp_path), "brief - 20260824") == \
-        str(tmp_path / "brief - 20260824 (3).md")
+    assert mb.free_path(str(tmp_path), "brief - 20260824") == str(
+        tmp_path / "brief - 20260824 (3).md"
+    )
 
 
 # --- rotate ---------------------------------------------------------------
+
 
 def test_rotate_first_run_just_writes(tmp_path):
     cfg = cfg_for(tmp_path)
@@ -118,8 +121,7 @@ def test_rotate_archives_across_a_month_boundary(tmp_path):
     (planning / "Morning Brief.md").write_text(note("2026-08-31"))
 
     r = mb.rotate(cfg, note("2026-09-01"), today=datetime.date(2026, 9, 1))
-    assert Path(r["archived"]) == \
-        planning / "History" / "2026" / "202608" / "brief - 20260831.md"
+    assert Path(r["archived"]) == planning / "History" / "2026" / "202608" / "brief - 20260831.md"
 
 
 def test_rotate_same_day_replaces_without_archiving(tmp_path):
@@ -169,8 +171,9 @@ def test_rotate_dry_run_touches_nothing(tmp_path):
     planning.mkdir()
     (planning / "Morning Brief.md").write_text(note("2026-08-23", "# yesterday\n"))
 
-    r = mb.rotate(cfg, note("2026-08-24", "# today\n"),
-                  today=datetime.date(2026, 8, 24), dry_run=True)
+    r = mb.rotate(
+        cfg, note("2026-08-24", "# today\n"), today=datetime.date(2026, 8, 24), dry_run=True
+    )
 
     assert r["archived"].endswith("brief - 20260823.md")
     assert not Path(r["archived"]).exists()
@@ -185,6 +188,7 @@ def test_rotate_appends_trailing_newline(tmp_path):
 
 
 # --- cli ------------------------------------------------------------------
+
 
 def test_save_refuses_empty_stdin(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("sys.stdin", type("S", (), {"read": staticmethod(lambda: "  \n")})())
@@ -207,7 +211,8 @@ def test_save_end_to_end(tmp_path, monkeypatch, capsys):
     (vault / "0 - Planning").mkdir(parents=True)
     (vault / "0 - Planning" / "Morning Brief.md").write_text(note("2026-08-23", "# yesterday\n"))
     (tmp_path / "start-work.json").write_text(
-        json.dumps({"morningBrief": {"vaultPath": str(vault)}}))
+        json.dumps({"morningBrief": {"vaultPath": str(vault)}})
+    )
     monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path))
 
     src = tmp_path / "brief.md"
@@ -232,7 +237,8 @@ def test_unknown_subcommand(capsys):
 
 def test_paths_emits_resolved_locations(tmp_path, monkeypatch, capsys):
     (tmp_path / "start-work.json").write_text(
-        json.dumps({"morningBrief": {"vaultPath": str(tmp_path / "v")}}))
+        json.dumps({"morningBrief": {"vaultPath": str(tmp_path / "v")}})
+    )
     monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path))
     assert mb.main(["paths", "--date", "2026-08-24"]) == 0
     data = json.loads(capsys.readouterr().out)

@@ -67,6 +67,15 @@ def _ingest_or_error(args: argparse.Namespace) -> BookModel | int:
     return book
 
 
+def _print_report(result: object) -> None:
+    """Print the validation checks. Callers print any error *after* this, so the
+    error stays last on screen while the diagnostics behind it stay visible."""
+    report = getattr(result, "report", None)
+    if report:
+        for c in report.checks:
+            print(f"  [{c.status}] {c.name}: {c.message}")
+
+
 def _run_interior(args: argparse.Namespace) -> int:
     book = _ingest_or_error(args)
     if isinstance(book, int):
@@ -78,6 +87,7 @@ def _run_interior(args: argparse.Namespace) -> int:
             google = f.read()
     result = produce_interior(book, google)
     if result.page_count < kdp_rules.MIN_PAGES:
+        _print_report(result)
         print(
             f"error: rendered interior has {result.page_count} pages; "
             f"KDP requires a minimum of {kdp_rules.MIN_PAGES} pages. "
@@ -87,9 +97,7 @@ def _run_interior(args: argparse.Namespace) -> int:
     with open(args.out, "wb") as f:
         f.write(result.pdf)
     print(f"interior: {result.page_count} pages, source={result.source} -> {args.out}")
-    if result.report:
-        for c in result.report.checks:
-            print(f"  [{c.status}] {c.name}: {c.message}")
+    _print_report(result)
     return 0
 
 
@@ -108,6 +116,7 @@ def _run_cover(args: argparse.Namespace) -> int:
             google = f.read()
     result = produce_interior(book, google)
     if result.page_count < kdp_rules.MIN_PAGES:
+        _print_report(result)
         print(
             f"error: interior is {result.page_count} pages; KDP needs "
             f"{kdp_rules.MIN_PAGES}+ before a cover can be built. Add more content."

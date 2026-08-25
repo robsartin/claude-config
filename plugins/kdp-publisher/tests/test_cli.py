@@ -1,4 +1,5 @@
 import docx
+import pypdf
 
 from kdp_publisher.cli import main
 
@@ -124,3 +125,55 @@ def test_cli_normalizes_case_and_alias_overrides(tmp_path):
     )
     assert rc == 0
     assert out.exists()
+
+
+def _short_doc(path, trim="6x9"):
+    d = docx.Document()
+    d.add_paragraph("Title: Too Short")
+    d.add_paragraph("Author: Tester")
+    d.add_paragraph(f"Trim: {trim}")
+    d.add_paragraph("Paper: cream")
+    d.add_heading("Chapter One", level=1)
+    for i in range(5):
+        d.add_paragraph(f"Paragraph {i}.")
+    d.save(str(path))
+
+
+def _google_pdf(path, width_in, height_in, pages):
+    w = pypdf.PdfWriter()
+    for _ in range(pages):
+        w.add_blank_page(width=width_in * 72, height=height_in * 72)
+    with open(path, "wb") as f:
+        w.write(f)
+
+
+def test_short_interior_still_prints_the_validation_report(tmp_path, capsys):
+    """A draft is short exactly while it is being set up — the window where a
+    wrong Page setup is cheapest to fix. Failing on page count must not hide it."""
+    src = tmp_path / "short.docx"
+    _short_doc(src)
+    google = tmp_path / "google.pdf"
+    _google_pdf(google, 5.0, 8.0, 6)  # 5x8 export against a 6x9 manuscript
+
+    rc = main(["interior", str(src), "--google-pdf", str(google), "-o", str(tmp_path / "o.pdf")])
+
+    out = capsys.readouterr().out
+    assert rc != 0
+    assert "trim" in out
+    assert "fonts" in out
+    # the page-count error stays the last thing on screen
+    assert out.rstrip().splitlines()[-1].startswith("error:")
+
+
+def test_short_cover_still_prints_the_validation_report(tmp_path, capsys):
+    src = tmp_path / "short.docx"
+    _short_doc(src)
+    google = tmp_path / "google.pdf"
+    _google_pdf(google, 5.0, 8.0, 6)
+
+    rc = main(["cover", str(src), "--google-pdf", str(google), "-o", str(tmp_path / "spec.txt")])
+
+    out = capsys.readouterr().out
+    assert rc != 0
+    assert "trim" in out
+    assert out.rstrip().splitlines()[-1].startswith("error:")

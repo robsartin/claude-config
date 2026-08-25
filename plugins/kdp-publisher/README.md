@@ -80,6 +80,7 @@ python -m kdp_publisher epub book.docx --cover-image front.png -o book.epub
 ```
 
 Missing metadata can be supplied with `--title/--author/--trim/--paper`.
+Supported trims: `6x9`, `5.5x8.5`, `5x8`, `8.5x11`.
 
 ## Proofing (there is no upload API)
 
@@ -96,10 +97,41 @@ Missing metadata can be supplied with `--title/--author/--trim/--paper`.
 - The cover renderer does **not** overlay the title on the front panel — supply a
   finished front cover that already carries the title, or use the spec-sheet's
   AI-art prompt, which bakes the title into generated art.
-- Google Docs can silently downsample images on PDF export; the validator flags
-  low-DPI images so photo-forward books fall back to the re-render path. **Always
-  confirm with a printed proof.**
+- Google Docs exports images at their **source resolution** — it does not
+  downsample (measured, see below). A low-DPI warning therefore means the
+  original image is too small for the size it is placed at, and re-rendering
+  will not add detail. **Always confirm with a printed proof.**
 - Not PDF/X-1a (KDP print-on-demand accepts standard embedded-font PDFs).
+
+### Google export: what was actually measured
+
+The primary path trusts the author's own **File → Download → PDF** instead of
+re-rendering. That rested on three unverified assumptions. Measured once against
+a real Google Docs export (2026-08-25, a 5.5×8.5 doc with 0.375in margins and
+two photos):
+
+| Assumption | Result |
+| --- | --- |
+| Exact trim mediabox | **Holds.** Every page measured 5.5000 × 8.5000 in — Google honors Page setup precisely. |
+| Fonts embedded | **Holds.** All eight Arial variants were embedded as subsets (`AAAAAA+` prefixes). |
+| No silent image downsampling | **Holds.** The PDF's images were 512×279 px, identical to the originals inside the `.docx`. Google passed them through untouched. |
+
+Two things this exposed in the validator, both since fixed:
+
+- Google emits a **Type3 font** for bullets and drawings. Type3 glyphs are
+  content-stream procedures carried in the PDF itself, so they have no
+  `/FontFile` — the font check counted that as unembedded and would have
+  rejected a valid export.
+- The DPI check compared raw pixel counts, not resolution. A 1500px image
+  placed across 5.25in prints at 286 DPI and passed; a 900px image placed at
+  1in is 900 DPI and warned. It now measures pixels ÷ printed size from the
+  content stream.
+
+Caveats on the sample: it was 6 pages, so `min_pages` fails against KDP's
+24-page minimum, and its photos are 512px placed ~4.7in wide, so they print at
+108 DPI — a property of the source images, not of Google. Images drawn inside a
+Form XObject are reported as unmeasured rather than guessed at; this export had
+none. **The printed-proof confirmation is still outstanding.**
 
 ## Development
 

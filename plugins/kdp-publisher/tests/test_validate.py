@@ -130,3 +130,102 @@ def test_bare_fonts_fail():
     fonts_check = next(c for c in report.checks if c.name == "fonts")
     assert fonts_check.status == "fail"
     assert report.ok is False
+
+
+def _weasy_pdf_6x9_with_placed_image(pages_text, image_px, placed_in):
+    """A 6x9 PDF whose image is *placed* at a chosen width, independent of its pixels."""
+    png_b64 = base64.b64encode(_tiny_png_bytes(size=image_px)).decode()
+    img_tag = f'<img src="data:image/png;base64,{png_b64}" style="width:{placed_in}in">'
+    html = f"""<html><head><style>
+      @page {{ size: 6in 9in; margin: 0.375in; }}
+      body {{ font-family: serif; }}
+      .pb {{ page-break-after: always; }}
+    </style></head><body>{img_tag}{pages_text}</body></html>"""
+    return HTML(string=html).write_pdf()
+
+
+def _dpi_check(pdf_bytes):
+    report = validate_interior_pdf(pdf_bytes, "6x9")
+    return next(c for c in report.checks if c.name == "image_dpi")
+
+
+def test_many_pixels_placed_large_warns_because_effective_dpi_is_under_300():
+    """1500px across 5.25in prints at ~286 DPI — under KDP's minimum, despite the pixel count."""
+    body = "".join(f"<p class='pb'>page {i}</p>" for i in range(30))
+    check = _dpi_check(_weasy_pdf_6x9_with_placed_image(body, image_px=1500, placed_in=5.25))
+
+    assert check.status == "warn"
+    assert "286" in check.message or "285" in check.message
+
+
+def test_image_passes_when_effective_dpi_clears_300():
+    """Same placement, more pixels: 1600px across 5.25in is ~305 DPI."""
+    body = "".join(f"<p class='pb'>page {i}</p>" for i in range(30))
+    check = _dpi_check(_weasy_pdf_6x9_with_placed_image(body, image_px=1600, placed_in=5.25))
+
+    assert check.status == "pass"
+
+
+def test_modest_pixel_count_placed_small_passes():
+    """900px at 1in is 900 DPI. Pixel count alone would have flagged this."""
+    body = "".join(f"<p class='pb'>page {i}</p>" for i in range(30))
+    check = _dpi_check(_weasy_pdf_6x9_with_placed_image(body, image_px=900, placed_in=1.0))
+
+    assert check.status == "pass"
+
+
+def test_dpi_message_reports_the_measured_resolution():
+    body = "".join(f"<p class='pb'>page {i}</p>" for i in range(30))
+    check = _dpi_check(_weasy_pdf_6x9_with_placed_image(body, image_px=1600, placed_in=5.25))
+
+    assert "DPI" in check.message
+
+
+def test_dpi_is_measured_on_merged_pages():
+    """A merged/stamped page still reports a measured DPI, not "unknown"."""
+    body = "".join(f"<p class='pb'>page {i}</p>" for i in range(30))
+    inner = pypdf.PdfReader(
+        io.BytesIO(_weasy_pdf_6x9_with_placed_image(body, image_px=1500, placed_in=5.25))
+    )
+    writer = pypdf.PdfWriter()
+    for src in inner.pages:
+        page = writer.add_blank_page(width=6 * 72, height=9 * 72)
+        page.merge_page(src)
+    buf = io.BytesIO()
+    writer.write(buf)
+
+    check = _dpi_check(buf.getvalue())
+
+    assert check.status == "warn"
+    assert "286" in check.message or "285" in check.message
+    assert "could not determine" not in check.message
+
+
+def test_type3_font_is_self_contained_not_unembedded():
+    """Type3 glyphs are content-stream procedures inside the PDF itself.
+
+    There is no font file to embed, so /FontFile is absent by construction.
+    Google Docs emits Type3 fonts for bullets and drawings; counting them as
+    unembedded fails an otherwise-valid export.
+    """
+    type3 = {
+        "/Subtype": "/Type3",
+        "/CharProcs": {"/g0": object(), "/g1": object()},
+        "/FontMatrix": [0.00048828125, 0, 0, -0.00048828125, 0, 0],
+        "/FontDescriptor": {},
+    }
+
+    assert _font_is_embedded(type3) is True
+
+
+def test_type3_without_charprocs_is_still_reported():
+    """A Type3 with no glyph procedures has nothing to draw with — not a free pass."""
+    assert _font_is_embedded({"/Subtype": "/Type3", "/FontDescriptor": {}}) is False
+
+
+def test_5_5x8_5_is_a_supported_trim():
+    """KDP's 5.5x8.5 is one of its most common trims."""
+    report = validate_interior_pdf(_blank_pdf(5.5, 8.5, 30), "5.5x8.5")
+    trim_check = next(c for c in report.checks if c.name == "trim")
+
+    assert trim_check.status == "pass"

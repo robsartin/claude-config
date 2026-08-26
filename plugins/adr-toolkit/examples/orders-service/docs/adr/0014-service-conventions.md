@@ -28,6 +28,23 @@ expectations worth stating regardless of language or framework.
 - **Statelessness** — request-scoped state is not held in process memory; shared state
   lives in a datastore or cache.
 
+The lifecycle the probes and signal handling exist to serve:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Starting
+    Starting --> Ready: readiness probe passes
+    Ready --> Draining: SIGTERM received
+    Draining --> Stopped: in-flight work finished
+    Stopped --> [*]
+    note right of Ready
+      Liveness answers "is it alive".
+      Readiness answers "should it get
+      traffic". Draining is alive but
+      not ready.
+    end note
+```
+
 ## Alternatives considered
 
 - **Config baked into the build per environment** — rejected because it requires a

@@ -25,6 +25,21 @@ alongside plain-JS settles how the two relate.
   whole subtree.
 - Transitions and interaction (zoom, brush, drag) use D3's own facilities.
 
+With no framework reconciling the DOM, D3 owns its subtree outright, and the data-join is
+how that subtree tracks the data:
+
+```mermaid
+flowchart LR
+    D[("Data")] --> J["selection.data"]
+    J --> E["enter:<br/>elements to create"]
+    J --> U["update:<br/>elements to keep"]
+    J --> X["exit:<br/>elements to remove"]
+    E --> S[("D3-owned subtree")]
+    U --> S
+    X --> S
+    S -. "re-run the join on change,<br/>never rebuild wholesale" .-> J
+```
+
 ## Alternatives considered
 
 - **Hand-rolled DOM diffing (manually tracking created/updated/removed elements)** — rejected

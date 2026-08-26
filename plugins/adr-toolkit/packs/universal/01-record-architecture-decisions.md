@@ -31,6 +31,24 @@ We record architecturally significant decisions as **Architecture Decision Recor
 - Reserve ADRs for decisions that are costly to reverse or that a future reader would
   otherwise find surprising; trivial choices don't need one.
 
+The lifecycle, including the transition that deliberately does not exist:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Proposed
+    Proposed --> Accepted: agreed
+    Proposed --> [*]: withdrawn
+    Accepted --> Deprecated: no longer applies
+    Accepted --> Superseded: a newer ADR replaces it
+    Deprecated --> [*]
+    Superseded --> [*]
+    note right of Accepted
+      Immutable. There is no edit
+      transition; a change means
+      a new ADR.
+    end note
+```
+
 ## Alternatives considered
 
 - **Commit messages and PR descriptions as the record** — the reasoning exists somewhere,

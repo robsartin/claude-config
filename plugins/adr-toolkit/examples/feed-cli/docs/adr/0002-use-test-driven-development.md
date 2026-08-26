@@ -28,6 +28,19 @@ following the red → green → refactor cycle:
 The iron law: **no production code without a failing test first.** A bug fix starts with a
 test that reproduces the bug. Exploratory spikes are thrown away and rebuilt test-first.
 
+The cycle, with the step that is easiest to skip drawn as a gate:
+
+```mermaid
+flowchart LR
+    R["Red: one small failing test"] --> V{"Fails for the expected reason?"}
+    V -- "no: fix the test" --> R
+    V -- yes --> G["Green: minimal code to pass"]
+    G --> P{"All tests pass?"}
+    P -- no --> G
+    P -- yes --> F["Refactor, staying green"]
+    F --> R
+```
+
 ## Alternatives considered
 
 - **Test-after development** — tests written once the code works tend to pass immediately

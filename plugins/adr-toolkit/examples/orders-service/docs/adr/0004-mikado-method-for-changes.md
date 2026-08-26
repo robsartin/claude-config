@@ -26,6 +26,29 @@ feasible:
   alongside the old, migrate call sites incrementally, then remove the old) rather than a
   single breaking edit.
 
+The loop. Each failed attempt buys knowledge, and the revert is what keeps the tree green:
+
+```mermaid
+flowchart LR
+    A["Attempt the change"] --> Q{"Does it work,<br/>build and tests green?"}
+    Q -- yes --> C["Commit"]
+    Q -- no --> N["Note the prerequisites<br/>on the goal graph"]
+    N --> V["Revert the attempt"]
+    V --> L["Take a leaf: a prerequisite<br/>with none of its own"]
+    L --> A
+```
+
+The graph that builds up, worked leaves first so every commit is green:
+
+```mermaid
+flowchart BT
+    L1["Leaf 1"] --> P1["Prerequisite A"]
+    L2["Leaf 2"] --> P1
+    L3["Leaf 3"] --> P2["Prerequisite B"]
+    P1 --> G["Goal"]
+    P2 --> G
+```
+
 ## Alternatives considered
 
 - **Big-bang refactor on a long-lived branch** — nothing is committable until the whole

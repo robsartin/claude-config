@@ -28,6 +28,24 @@ When a project adopts observability, it covers the three pillars:
 - **Correlation** — a trace/request id is generated at the edge, propagated across service
   boundaries, and included in logs, so the three pillars join up.
 
+Correlation is what makes the three pillars one story rather than three:
+
+```mermaid
+sequenceDiagram
+    participant U as Client
+    participant E as Edge
+    participant A as Service A
+    participant B as Service B
+    U->>E: request
+    Note over E: mint trace id
+    E->>A: request + trace context
+    A->>B: request + trace context
+    B-->>A: response
+    A-->>E: response
+    E-->>U: response
+    Note over E,B: the same trace id appears in every log line,<br/>on metric exemplars, and on every span
+```
+
 ## Alternatives considered
 
 - **A vendor-specific APM agent (Datadog, New Relic)** — quick to set up with rich

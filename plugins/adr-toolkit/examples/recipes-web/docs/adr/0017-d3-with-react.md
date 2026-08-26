@@ -26,6 +26,17 @@ what.
 - Keep the computed scales/generators memoised; recompute only when data or dimensions
   change.
 
+Where the line falls:
+
+```mermaid
+flowchart LR
+    D[("Data")] --> S["D3: scales, shapes,<br/>layouts, geo"]
+    S --> V["Computed values:<br/>paths, ticks, positions"]
+    V --> R["React renders JSX"]
+    R --> DOM[("DOM")]
+    H["Escape hatch:<br/>ref + useEffect"] -. "owns one subtree,<br/>React does not touch it" .-> DOM
+```
+
 ## Alternatives considered
 
 - **Let D3 select and mutate React-managed nodes directly** (`d3.select(ref).append(...)`

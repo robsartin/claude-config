@@ -28,6 +28,22 @@ All work flows through short-lived branches and pull requests:
   work is needed, branch off it or return the PR to draft first — reviewers should not be
   chasing a moving target.
 
+The path a change takes, including the loop back when a ready PR needs more work:
+
+```mermaid
+flowchart TD
+    I["Issue"] --> B["Branch off main"]
+    B --> C["Focused commits"]
+    C --> P["Open PR into main"]
+    P --> G{"CI gate green?"}
+    G -- no --> C
+    G -- yes --> R["Ready for review"]
+    R --> M["Squash-merge into main"]
+    R -.-> D["More work needed"]
+    D -.-> W["Return to draft, or branch off it"]
+    W -.-> C
+```
+
 ## Alternatives considered
 
 - **Long-lived feature branches / GitFlow** — merges become large, infrequent, risky events

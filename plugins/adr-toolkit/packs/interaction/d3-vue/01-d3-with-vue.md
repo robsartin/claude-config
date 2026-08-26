@@ -32,6 +32,17 @@ object it expects. Selecting both D3 and Vue forces a decision on who owns what.
 - Derive scales and generators with `computed`, so they recompute only when data or
   dimensions change.
 
+Where the line falls:
+
+```mermaid
+flowchart LR
+    D[("Data")] --> S["D3: scales, shapes,<br/>layouts, geo"]
+    S --> V["Computed values:<br/>paths, ticks, positions"]
+    V --> R["Vue renders the template"]
+    R --> DOM[("DOM")]
+    H["Escape hatch:<br/>template ref + onMounted"] -. "owns one subtree,<br/>Vue does not touch it" .-> DOM
+```
+
 ## Alternatives considered
 
 - **Let D3 select and mutate Vue-managed nodes directly** (`d3.select(el).append(...)`

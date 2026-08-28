@@ -36,6 +36,10 @@ python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" jira-pull --since <SINCE>
 # glab's default host or add `--hostname <your-gitlab-host>` to the call.
 glab api "/merge_requests?scope=created_by_me&state=merged&updated_after=<SINCE>T00:00:00Z&per_page=100" \
   | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-gitlab
+# GitLab MRs you REVIEWED in the range (someone else's work) — reviewer_username, not scope,
+# since scope only covers MRs you authored or are assigned. Needs your GitLab username.
+glab api "/merge_requests?reviewer_username=<your-gitlab-username>&state=merged&updated_after=<SINCE>T00:00:00Z&per_page=100" \
+  | python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" parse-gitlab-reviews
 ```
 
 `jira-pull` talks to the Jira Cloud REST API directly rather than shelling out to the `jira`
@@ -54,7 +58,9 @@ It requests only `resolutiondate` and `updated`. `statuscategorychangedate` is d
 excluded: on an unresolved ticket it records when the ticket entered its current category, which
 is not a shipped date and would push in-range entries out of the report's window.
 
-Both emit normalized `{date, type: "shipped", ref, text}` entries. If a `ref` from the pull
+`jira-pull`/`parse-gitlab` emit normalized `{date, type: "shipped", ref, text}` entries;
+`parse-gitlab-reviews` emits `{date, type: "reviewed", ...}` — a separate type so a report can
+list review work alongside shipped work rather than blending the two. If a `ref` from a pull
 already appears in the hand-logged entries, prefer the hand-logged one (it has your context) and
 drop the duplicate. Everything is still factual — the pull never invents activity.
 
@@ -64,11 +70,14 @@ drop the duplicate. Everything is still factual — the pull never invents activ
 2. Pull the hand-logged entries:
    `python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" entries --since <YYYY-MM-DD> --until <YYYY-MM-DD>`
    Then, if `jira`/`glab` are available, run the **Factual pull** above for the same range and
-   merge (dedup by `ref`, hand-logged wins).
-3. Draft a report from ONLY those entries — group by ticket/theme, lead with shipped work.
-   Use the `worklog.weeklyTemplate` from config as the format if present; otherwise a simple
-   "Shipped / In progress / Notes" structure. If there's nothing in range, say "nothing logged in
-   <range>" — never invent activity.
+   merge (dedup by `ref`, hand-logged wins). For the reviews pull, get the GitLab username once
+   with `glab api user` (read `.username` from the JSON) and reuse it — don't ask the user for it.
+   Skip the reviews pull silently on any error, same as the other pulls.
+3. Draft a report from ONLY those entries — group by ticket/theme, lead with shipped work, then
+   a **Reviewed** section for `type: "reviewed"` entries if any are in range. Use the
+   `worklog.weeklyTemplate` from config as the format if present; otherwise a simple
+   "Shipped / Reviewed / In progress / Notes" structure. If there's nothing in range, say
+   "nothing logged in <range>" — never invent activity.
 4. Write the draft to `<vaultPath>/<reportsDir>/Weekly-<YYYY>-W<ww>.md` for the user to edit.
    Do not send or post it. Professional register — do not use the personal `voice` skill, and do not include anything not present in the pulled entries.
 5. Append the **Report metrics section** (see Metrics below) as the last block of the draft, for

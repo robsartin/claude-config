@@ -12,7 +12,7 @@ DEFAULTS = {
     "worklogFile": "Worklog.md",
     "metricsFile": "Metrics.md",
     "reportsDir": "Reports",
-    "types": ["started", "shipped", "note", "help"],
+    "types": ["started", "shipped", "note", "help", "reviewed"],
 }
 
 
@@ -159,6 +159,29 @@ def parse_gitlab_mrs(raw):
     return out
 
 
+def parse_gitlab_reviews(raw):
+    """Normalize `glab api /merge_requests?reviewer_username=...` output (a JSON
+    array of MRs, or a JSON string) into reviewed-entry dicts {date, type:
+    "reviewed", ref, text}. Same shape as parse_gitlab_mrs but for MRs you
+    reviewed rather than authored/merged yourself -- distinct type so a weekly
+    report can list review work alongside, not blended into, shipped work."""
+    data = raw if isinstance(raw, (list, dict)) else json.loads(raw)
+    if not isinstance(data, list):  # glab emits an object (e.g. {"message": "404"}) on errors
+        data = []
+    out = []
+    for mr in data:
+        raw_date = mr.get("merged_at") or mr.get("updated_at") or ""
+        refs = mr.get("references") or {}
+        ref = refs.get("full") or (f"!{mr.get('iid')}" if mr.get("iid") else "")
+        out.append({
+            "date": raw_date[:10],
+            "type": "reviewed",
+            "ref": ref,
+            "text": f"{ref} — {mr.get('title', '') or ''}".strip(" —"),
+        })
+    return out
+
+
 JIRA_CLI_CONFIG = "~/.config/.jira/.config.yml"
 
 
@@ -234,7 +257,7 @@ def _cmd_jira_pull(rest):
 
 def main(argv):
     if not argv:
-        print("usage: worklog.py <log|entries|jira-pull|parse-jira|parse-gitlab|metric|metrics> ...",
+        print("usage: worklog.py <log|entries|jira-pull|parse-jira|parse-gitlab|parse-gitlab-reviews|metric|metrics> ...",
               file=sys.stderr)
         return 2
     cmd, rest = argv[0], argv[1:]
@@ -253,13 +276,17 @@ def main(argv):
         return 0
     if cmd == "jira-pull":
         return _cmd_jira_pull(rest)
-    if cmd in ("parse-jira", "parse-gitlab"):
+    if cmd in ("parse-jira", "parse-gitlab", "parse-gitlab-reviews"):
         text = sys.stdin.read().strip()
         try:
             data = json.loads(text) if text else []
         except json.JSONDecodeError:
             data = []  # a failed upstream jira/glab command -> empty, not a crash
-        fn = parse_jira_list if cmd == "parse-jira" else parse_gitlab_mrs
+        fn = {
+            "parse-jira": parse_jira_list,
+            "parse-gitlab": parse_gitlab_mrs,
+            "parse-gitlab-reviews": parse_gitlab_reviews,
+        }[cmd]
         print(json.dumps(fn(data), indent=2))
         return 0
     if cmd == "metric":
@@ -482,6 +509,7 @@ def _cmd_metrics(rest):
     derived = {
         "help-count": count_events(wcontent, "help", a.since, a.until),
         "prs-merged": count_events(wcontent, "shipped", a.since, a.until),
+        "reviews-count": count_events(wcontent, "reviewed", a.since, a.until),
     }
     print(json.dumps({"metrics": metrics, "derived": derived}, indent=2))
     return 0

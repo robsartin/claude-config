@@ -41,6 +41,11 @@ plugins/worklog/                    # "worklog" — Python-backed (python3, no v
   skills/worklog/SKILL.md
   bin/worklog.py                    # log + report + metrics helpers
   commands/log.md, weekly-report.md, perf-review.md, metric.md, metrics.md
+plugins/open-tickets/                # "open-tickets" — Python-backed (python3, no venv)
+  .claude-plugin/plugin.json
+  skills/open-tickets/SKILL.md
+  bin/open_tickets.py               # fetches open Jira issues + description/comments
+  commands/open-tickets.md
 bin/bootstrap.sh                    # one-shot new-machine setup (see README)
 .github/workflows/                  # per-plugin path-scoped CI
 ```
@@ -83,6 +88,10 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 ### worklog
 
 `worklog` captures work activity into a rolling Obsidian `Worklog.md` (via `/worklog:log`) and drafts weekly status reports (`/worklog:weekly-report`) or performance-review narratives (`/worklog:perf-review`) from it. Its helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (the `worklog` section of `~/.claude/start-work.json`), never part of this repo; reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports augment the hand-logged notes with a **factual pull** (tickets resolved + MRs merged in range). `/worklog:metric` records numeric KPIs (`work-hours` is a recommended one, alongside `sleep-hours` or energy) into a separate `Metrics.md`, accepting several `name=value` readings in one call (e.g. `work-hours=8 sleep-hours=7.2`) and upserting one value per name per day; `/worklog:metrics` drafts a trend report (a table with a Total column for `-hours` metrics, plus daily-average and sparkline columns, then derived counts) from it. The `help` event type (alongside `log`'s other event types) feeds the derived help-count KPI. Both the weekly report and the perf-review draft now end with a **Metrics (curate before sharing)** table pulled from `Metrics.md` (a Total column filled for `-hours` metrics, a dash otherwise, plus daily average) — trim it before using the draft, nothing is auto-sent, and the section is simply omitted when there are no readings in range.
+
+### open-tickets
+
+`open-tickets` (`/open-tickets:open-tickets`) summarizes currently-open Jira tickets as an ID / Description / Blocker / Next Steps table, so tickets stalled waiting on someone else are visible instead of blending into a normal board. Its helper (`bin/open_tickets.py`) runs directly on `python3`, no venv, and only does the mechanical part: a cross-project JQL search (same Jira Cloud REST + `jira`-CLI-config-for-credentials approach as `worklog`'s `jira-pull`) returning each open ticket's description and most recent comments as JSON. Synthesizing the Blocker/Next Steps columns from that data — weighting later comments over the original description — is left to the agent, not scripted.
 
 ## Plugin conventions
 

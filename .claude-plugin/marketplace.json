@@ -44,6 +44,11 @@
       "name": "morning-brief",
       "source": "./plugins/morning-brief",
       "description": "Park the morning brief in 0 - Planning and roll the previous one into History."
+    },
+    {
+      "name": "open-tickets",
+      "source": "./plugins/open-tickets",
+      "description": "Summarize your open Jira tickets as an ID / Description / Blocker / Next Steps table."
     }
   ]
 }

@@ -1,0 +1,7 @@
+{
+  "name": "open-tickets",
+  "description": "Summarize your open Jira tickets as an ID / Description / Blocker / Next Steps table.",
+  "author": { "name": "Rob Sartin" },
+  "keywords": ["jira", "tickets", "status", "blocker", "next-steps", "report"],
+  "commands": ["./commands/open-tickets.md"]
+}

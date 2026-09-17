@@ -107,10 +107,10 @@ ever auto-sent.
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric <name=value> [<name=value> ...] [--date YYYY-MM-DD]
 # one reading, or a whole day at once:
-python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric work-hours=8 sleep-hours=7.2 energy=4
+python3 "${CLAUDE_PLUGIN_ROOT}/bin/worklog.py" metric work-hours=8 sleep-hours=7.2 meetings-hours=2.5
 ```
 
-e.g. `metric work-hours 8`, `metric sleep-hours 7.2`, `metric energy 4`
+e.g. `metric work-hours 8`, `metric sleep-hours 7.2`, `metric meetings-hours 2.5`
 (`work-hours` is a good work KPI to surface in the reports). The value must be
 numeric (a trailing unit like `7.2h` is fine — the number is kept). Re-recording the same metric
 on the same day **replaces** it (a reading, not an event). Mentoring/assists are logged as
@@ -163,7 +163,7 @@ fabricate points — chart only the readings the `metrics` pull returned.
    | --- | --- | --- | --- |
    | work-hours | 42.5h | 8.5 | ▁▃▅▇ |
    | sleep-hours | 49.0h | 7.0 | ▅▄▆▇ |
-   | energy | — | 4.0 | ▃▄▅ |
+   | meetings-hours | 12.5h | 2.5 | ▃▄▅ |
 
    Derived: help-count 3, prs-merged 2
    ```
@@ -193,7 +193,7 @@ as the report**:
 | --- | --- | --- |
 | work-hours | 42.5h | 8.5 |
 | sleep-hours | 49.0h | 7.0 |
-| energy | — | 4.0 |
+| meetings-hours | 12.5h | 2.5 |
 ```
 
 One row per metric with readings in range. **Total column rule:** fill Total only for metrics

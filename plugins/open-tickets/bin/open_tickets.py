@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""open-tickets: fetch your open Jira issues (with description + recent comments)
-so a blocker/next-step table can be drafted from them. Stdlib only."""
+"""open-tickets: fetch your open Jira issues (with description + recent comments),
+plus open issues from your personal GitLab tracker, so a blocker/next-step table
+can be drafted from them. Stdlib only."""
 import base64
 import json
 import os
@@ -62,9 +63,12 @@ def adf_to_text(node):
 
 
 def normalize_issue(issue, max_comments=MAX_COMMENTS):
-    """A search-result issue -> {key, summary, status, description, comments}.
-    `comments` keeps only the most recent `max_comments`, oldest of that tail first,
-    so a heavily-discussed ticket doesn't dump its entire history into the prompt."""
+    """A Jira search-result issue -> {key, summary, status, description, comments,
+    updated}. `comments` keeps only the most recent `max_comments`, oldest of that
+    tail first, so a heavily-discussed ticket doesn't dump its entire history into
+    the prompt. `updated` (raw ISO 8601, may be "") is sort-only plumbing so this
+    source can be interleaved with gitlab-issues output by recency; it's not a
+    table column."""
     f = issue.get("fields") or {}
     comments = ((f.get("comment") or {}).get("comments") or [])[-max_comments:]
     return {
@@ -79,6 +83,28 @@ def normalize_issue(issue, max_comments=MAX_COMMENTS):
             }
             for c in comments
         ],
+        "updated": f.get("updated", "") or "",
+    }
+
+
+def normalize_gitlab_issue(issue):
+    """A `glab api /projects/:id/issues` result -> the same
+    {key, summary, status, description, comments, updated} shape `normalize_issue`
+    produces, so both sources can feed one table-building pass. `key` is the
+    project-qualified reference (e.g. "rsartin/rob-tracker#4"); `status` is the
+    label set (this tracker uses labels like "next"/"someday" as its board
+    columns, which is more informative here than the constant `state=opened` the
+    fetch already filters on). `description` is already plain markdown, not ADF.
+    `comments` is always empty — a personal tracker's own description is kept
+    current by editing it (or by closing the issue), not by discussion threads."""
+    refs = issue.get("references") or {}
+    return {
+        "key": refs.get("full") or (f"#{issue.get('iid')}" if issue.get("iid") else ""),
+        "summary": issue.get("title", "") or "",
+        "status": ", ".join(issue.get("labels") or []) or "Open",
+        "description": (issue.get("description") or "").strip(),
+        "comments": [],
+        "updated": issue.get("updated_at", "") or "",
     }
 
 
@@ -102,7 +128,7 @@ def _cmd_fetch(rest):
     jql = f"assignee = {a.user} AND statusCategory != Done ORDER BY updated DESC"
     try:
         data = jira_search(cfg["server"], cfg["login"], token, jql,
-                            "summary,status,description,comment")
+                            "summary,status,description,comment,updated")
     except Exception as e:  # network/auth/API failure -> degrade, don't crash
         print(json.dumps([]))
         print(f"open-tickets: fetch failed ({type(e).__name__}: {e}).", file=sys.stderr)
@@ -112,11 +138,41 @@ def _cmd_fetch(rest):
     return 0
 
 
+def _cmd_parse_gitlab_issues(rest):
+    """Read `glab api /projects/:id/issues?...` JSON from stdin (a JSON array, or
+    an error object such as {"message": "404 Project Not Found"}) and print the
+    normalized array. Never shells out to `glab` itself — same reasoning as
+    worklog's parse-gitlab: invocation (and the target host/project) stays in the
+    skill's documented command, not hardcoded in this script."""
+    raw = sys.stdin.read()
+    try:
+        data = json.loads(raw) if raw.strip() else []
+    except json.JSONDecodeError as e:
+        print(json.dumps([]))
+        print(f"open-tickets: parse-gitlab-issues failed to parse stdin as JSON "
+              f"({e}).", file=sys.stderr)
+        return 0
+    if not isinstance(data, list):  # glab emits an object on errors (bad project, auth, etc.)
+        print(json.dumps([]))
+        print(f"open-tickets: parse-gitlab-issues got a non-list response: "
+              f"{json.dumps(data)[:200]}", file=sys.stderr)
+        return 0
+    print(json.dumps([normalize_gitlab_issue(i) for i in data], indent=2))
+    return 0
+
+
 def main(argv):
-    if not argv or argv[0] != "fetch":
-        print("usage: open_tickets.py fetch [--user <JQL assignee expression>]", file=sys.stderr)
+    if not argv:
+        print("usage: open_tickets.py fetch [--user <JQL assignee expression>] "
+              "| parse-gitlab-issues", file=sys.stderr)
         return 2
-    return _cmd_fetch(argv[1:])
+    if argv[0] == "fetch":
+        return _cmd_fetch(argv[1:])
+    if argv[0] == "parse-gitlab-issues":
+        return _cmd_parse_gitlab_issues(argv[1:])
+    print("usage: open_tickets.py fetch [--user <JQL assignee expression>] "
+          "| parse-gitlab-issues", file=sys.stderr)
+    return 2
 
 
 if __name__ == "__main__":

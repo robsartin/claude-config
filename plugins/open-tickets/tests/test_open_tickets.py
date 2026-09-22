@@ -52,6 +52,7 @@ def test_normalize_issue_shapes_fields_and_trims_comments():
                  ]}}
                 for i in range(12)
             ]},
+            "updated": "2026-09-20T12:00:00.000-0500",
         },
     }
     out = ot.normalize_issue(issue, max_comments=3)
@@ -62,6 +63,7 @@ def test_normalize_issue_shapes_fields_and_trims_comments():
     assert len(out["comments"]) == 3
     # keeps the most recent tail, in original (oldest-of-tail-first) order
     assert [c["body"] for c in out["comments"]] == ["comment 9", "comment 10", "comment 11"]
+    assert out["updated"] == "2026-09-20T12:00:00.000-0500"
 
 
 def test_normalize_issue_missing_optional_fields():
@@ -72,4 +74,42 @@ def test_normalize_issue_missing_optional_fields():
         "status": "",
         "description": "",
         "comments": [],
+        "updated": "",
     }
+
+
+def test_normalize_gitlab_issue_shapes_fields():
+    issue = {
+        "iid": 4,
+        "title": "Confirm no fallout from EVNT-9550",
+        "description": "Likely moot, worth a quick check.",
+        "labels": ["someday"],
+        "updated_at": "2026-09-21T17:25:20.371Z",
+        "references": {"full": "rsartin/rob-tracker#4"},
+    }
+    out = ot.normalize_gitlab_issue(issue)
+    assert out == {
+        "key": "rsartin/rob-tracker#4",
+        "summary": "Confirm no fallout from EVNT-9550",
+        "status": "someday",
+        "description": "Likely moot, worth a quick check.",
+        "comments": [],
+        "updated": "2026-09-21T17:25:20.371Z",
+    }
+
+
+def test_normalize_gitlab_issue_missing_optional_fields():
+    out = ot.normalize_gitlab_issue({"iid": 7})
+    assert out == {
+        "key": "#7",
+        "summary": "",
+        "status": "Open",
+        "description": "",
+        "comments": [],
+        "updated": "",
+    }
+
+
+def test_normalize_gitlab_issue_joins_multiple_labels():
+    out = ot.normalize_gitlab_issue({"iid": 1, "labels": ["next", "billing"]})
+    assert out["status"] == "next, billing"

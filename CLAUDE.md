@@ -44,7 +44,7 @@ plugins/worklog/                    # "worklog" — Python-backed (python3, no v
 plugins/open-tickets/                # "open-tickets" — Python-backed (python3, no venv)
   .claude-plugin/plugin.json
   skills/open-tickets/SKILL.md
-  bin/open_tickets.py               # fetches open Jira issues + description/comments
+  bin/open_tickets.py               # fetches open Jira issues; normalizes rob-tracker issues and MRs under review
   commands/open-tickets.md
 bin/bootstrap.sh                    # one-shot new-machine setup (see README)
 .github/workflows/                  # per-plugin path-scoped CI
@@ -91,7 +91,7 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 
 ### open-tickets
 
-`open-tickets` (`/open-tickets:open-tickets`) summarizes currently-open Jira tickets as an ID / Description / Blocker / Next Steps table, so tickets stalled waiting on someone else are visible instead of blending into a normal board. Its helper (`bin/open_tickets.py`) runs directly on `python3`, no venv, and only does the mechanical part: a cross-project JQL search (same Jira Cloud REST + `jira`-CLI-config-for-credentials approach as `worklog`'s `jira-pull`) returning each open ticket's description and most recent comments as JSON. Synthesizing the Blocker/Next Steps columns from that data — weighting later comments over the original description — is left to the agent, not scripted.
+`open-tickets` (`/open-tickets:open-tickets`) summarizes currently-open Jira tickets, personal `rob-tracker` GitLab issues, and the GitLab MRs you are a reviewer on as an ID / Description / Blocker / Next Steps table, so tickets stalled waiting on someone else are visible instead of blending into a normal board. Its helper (`bin/open_tickets.py`) runs directly on `python3`, no venv, and only does the mechanical part: a cross-project JQL search (same Jira Cloud REST + `jira`-CLI-config-for-credentials approach as `worklog`'s `jira-pull`) returning each open ticket's description and most recent comments as JSON. Synthesizing the Blocker/Next Steps columns from that data — weighting later comments over the original description — is left to the agent, not scripted.
 
 ## Plugin conventions
 

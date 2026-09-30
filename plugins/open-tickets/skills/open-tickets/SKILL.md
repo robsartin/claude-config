@@ -1,15 +1,15 @@
 ---
 name: open-tickets
-description: Use to summarize a user's currently-open Jira tickets and personal GitLab tracker issues as a table, especially to surface what each one is blocked on and what the next step is. Triggers on "summarize my open tickets", "ticket status", "what am I blocked on", "waiting-on breakdown".
+description: Use to summarize a user's currently-open Jira tickets, personal GitLab tracker issues, and the MRs they are reviewing as a table, especially to surface what each one is blocked on and what the next step is. Triggers on "summarize my open tickets", "ticket status", "what am I blocked on", "waiting-on breakdown".
 ---
 
 # Open Tickets
 
-Summarize the user's open Jira tickets **and** open issues from their personal GitLab tracker
-(`rob-tracker`) as a single table with **ID, Description, Blocker, Next Steps** columns — one
-row per ticket/issue. The point is surfacing what's actually stalled waiting on someone else
-versus what's moving, since a normal Jira board (or a personal kanban) doesn't distinguish the
-two.
+Summarize the user's open Jira tickets, open issues from their personal GitLab tracker
+(`rob-tracker`), **and** the open MRs they are a reviewer on, as a single table with
+**ID, Description, Blocker, Next Steps** columns — one row per ticket/issue/review. The point
+is surfacing what's actually stalled waiting on someone else versus what's moving, since a
+normal Jira board (or a personal kanban) doesn't distinguish the two.
 
 A helper at `${CLAUDE_PLUGIN_ROOT}/bin/open_tickets.py` (run with `python3`) fetches/normalizes
 the raw data; synthesizing Blocker/Next Steps from it is a judgment call and stays with the
@@ -45,7 +45,26 @@ target project stays in the documented command rather than hardcoded in the scri
 source silently if `glab` isn't installed or the call errors (a missing tool shouldn't block the
 Jira half of the table).
 
-Both commands print a JSON array in the same shape, one object per open item:
+**MRs you are reviewing (GitLab):**
+
+```bash
+glab api "/merge_requests?reviewer_username=<your-gitlab-username>&state=opened&scope=all&per_page=100" \
+  | python3 "${CLAUDE_PLUGIN_ROOT}/bin/open_tickets.py" parse-gitlab-reviews
+```
+
+Get the username once with `glab api user` (read `.username`) and reuse it, rather than asking the
+user. `reviewer_username` is what finds these: `scope=assigned_to_me` covers MRs you're *assigned*,
+not ones you're asked to review. Each MR is keyed by the first Jira key in its title (MR titles lead
+with their ticket, e.g. `ABC-123: ...`), falling back to the MR reference, so the review lines up
+with the ticket it belongs to even though that ticket is usually assigned to someone else. If a key
+also appears in the Jira fetch (you're reviewing an MR on your own ticket), keep the Jira row and
+skip the review row. Skip this source silently on any error, same as `rob-tracker`.
+
+For a review row, read the MR's unresolved discussions when you need them to fill in Blocker/Next
+Steps: `comments` is empty for reviews, and the MR (not the ticket) is where the current state lives.
+The usual shape is "waiting on the author to address your comments" or "ready for your approval".
+
+All three commands print a JSON array in the same shape, one object per open item:
 
 ```json
 {"key": "ABC-123", "summary": "...", "status": "In Progress",
@@ -57,7 +76,7 @@ Both commands print a JSON array in the same shape, one object per open item:
 see the latest disposition without dragging in a ticket's entire history; it's always empty for
 `rob-tracker` issues, which don't carry discussion threads (their `description` is kept current
 by editing it, or the issue is just closed). `updated` is sort-only plumbing, not a table column —
-use it to interleave the two sources by recency into one fetch-order list before building the
+use it to interleave the three sources by recency into one fetch-order list before building the
 table.
 
 ## Building the table
@@ -73,8 +92,8 @@ later comments override the original description) and fill in:
 - **Next Steps** — the concrete next action, and who owns it (the user, or whoever they're
   waiting on).
 
-Render as a single markdown table combining both sources, most-recently-updated first (sort the
-merged list by each item's `updated` field, descending). If both fetches returned nothing (no
+Render as a single markdown table combining all three sources, most-recently-updated first (sort the
+merged list by each item's `updated` field, descending). If every fetch returned nothing (no
 access, or no open items), say so plainly instead of showing an empty table.
 
 ## Quick reference

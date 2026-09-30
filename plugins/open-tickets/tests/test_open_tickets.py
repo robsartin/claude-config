@@ -113,3 +113,70 @@ def test_normalize_gitlab_issue_missing_optional_fields():
 def test_normalize_gitlab_issue_joins_multiple_labels():
     out = ot.normalize_gitlab_issue({"iid": 1, "labels": ["next", "billing"]})
     assert out["status"] == "next, billing"
+
+
+def _mr(**over):
+    mr = {
+        "iid": 42,
+        "title": "ABC-123: Add a dry-run flag to the export job",
+        "description": "Adds a separate code path.",
+        "draft": False,
+        "detailed_merge_status": "not_approved",
+        "author": {"username": "alex"},
+        "updated_at": "2026-09-30T14:37:00.000Z",
+        "references": {"full": "team/service!42"},
+    }
+    mr.update(over)
+    return mr
+
+
+def test_normalize_gitlab_review_keys_by_jira_ticket_in_title():
+    out = ot.normalize_gitlab_review(_mr())
+    assert out == {
+        "key": "ABC-123",
+        "summary": "Reviewing team/service!42 (by alex): ABC-123: Add a dry-run flag to the export job",
+        "status": "Reviewing (not_approved)",
+        "description": "Adds a separate code path.",
+        "comments": [],
+        "updated": "2026-09-30T14:37:00.000Z",
+    }
+
+
+def test_normalize_gitlab_review_falls_back_to_mr_ref_without_a_ticket():
+    out = ot.normalize_gitlab_review(_mr(title="docs: fix a typo"))
+    assert out["key"] == "team/service!42"
+
+
+def test_normalize_gitlab_review_marks_drafts():
+    out = ot.normalize_gitlab_review(_mr(draft=True))
+    assert out["status"] == "Reviewing (draft, not_approved)"
+
+
+def test_normalize_gitlab_review_missing_optional_fields():
+    out = ot.normalize_gitlab_review({"iid": 5})
+    assert out == {
+        "key": "!5",
+        "summary": "Reviewing !5: ",
+        "status": "Reviewing",
+        "description": "",
+        "comments": [],
+        "updated": "",
+    }
+
+
+def test_parse_gitlab_reviews_cli_normalizes_a_list(monkeypatch, capsys):
+    import io
+    import json
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps([_mr()])))
+    assert ot.main(["parse-gitlab-reviews"]) == 0
+    assert [i["key"] for i in json.loads(capsys.readouterr().out)] == ["ABC-123"]
+
+
+def test_parse_gitlab_reviews_cli_degrades_on_error_object(monkeypatch, capsys):
+    import io
+    import json
+    monkeypatch.setattr("sys.stdin", io.StringIO('{"message": "401 Unauthorized"}'))
+    assert ot.main(["parse-gitlab-reviews"]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == []
+    assert "parse-gitlab-reviews" in captured.err

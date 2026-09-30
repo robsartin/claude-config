@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """open-tickets: fetch your open Jira issues (with description + recent comments),
-plus open issues from your personal GitLab tracker, so a blocker/next-step table
-can be drafted from them. Stdlib only."""
+plus open issues from your personal GitLab tracker and the MRs you are reviewing,
+so a blocker/next-step table can be drafted from them. Stdlib only."""
 import base64
 import json
 import os
@@ -108,6 +108,35 @@ def normalize_gitlab_issue(issue):
     }
 
 
+JIRA_KEY = re.compile(r"\b[A-Z][A-Z0-9]+-\d+\b")
+
+
+def normalize_gitlab_review(mr):
+    """A `glab api /merge_requests?reviewer_username=...` result -> the same
+    {key, summary, status, description, comments, updated} shape, so MRs you are
+    reviewing join the table. `key` is the first Jira key in the title (MR titles
+    here lead with their ticket, e.g. "ABC-123: ..."), falling back to the MR's
+    project-qualified reference, so a review lines up with the ticket it belongs
+    to. `summary` names the MR and its author, since the ticket usually isn't
+    yours. `status` is "Reviewing" plus draft and GitLab's detailed_merge_status
+    (e.g. "not_approved"). `comments` is empty: review threads are for the agent
+    to read on the MR itself when the row needs them."""
+    ref = (mr.get("references") or {}).get("full") or (f"!{mr.get('iid')}" if mr.get("iid") else "")
+    title = mr.get("title", "") or ""
+    m = JIRA_KEY.search(title)
+    author = (mr.get("author") or {}).get("username", "")
+    by = f" (by {author})" if author else ""
+    flags = [f for f in ("draft" if mr.get("draft") else "", mr.get("detailed_merge_status") or "") if f]
+    return {
+        "key": m.group(0) if m else ref,
+        "summary": f"Reviewing {ref}{by}: {title}",
+        "status": "Reviewing" + (f" ({', '.join(flags)})" if flags else ""),
+        "description": (mr.get("description") or "").strip(),
+        "comments": [],
+        "updated": mr.get("updated_at", "") or "",
+    }
+
+
 def _cmd_fetch(rest):
     import argparse
     ap = argparse.ArgumentParser(prog="open_tickets.py fetch")
@@ -138,40 +167,49 @@ def _cmd_fetch(rest):
     return 0
 
 
-def _cmd_parse_gitlab_issues(rest):
-    """Read `glab api /projects/:id/issues?...` JSON from stdin (a JSON array, or
-    an error object such as {"message": "404 Project Not Found"}) and print the
-    normalized array. Never shells out to `glab` itself — same reasoning as
-    worklog's parse-gitlab: invocation (and the target host/project) stays in the
-    skill's documented command, not hardcoded in this script."""
+def _parse_stdin_list(command, normalize):
+    """Read `glab api` JSON from stdin (a JSON array, or an error object such as
+    {"message": "404 Project Not Found"}) and print it normalized. Never shells out
+    to `glab` itself — same reasoning as worklog's parse-gitlab: invocation (and
+    the target host/project) stays in the skill's documented command, not
+    hardcoded in this script."""
     raw = sys.stdin.read()
     try:
         data = json.loads(raw) if raw.strip() else []
     except json.JSONDecodeError as e:
         print(json.dumps([]))
-        print(f"open-tickets: parse-gitlab-issues failed to parse stdin as JSON "
+        print(f"open-tickets: {command} failed to parse stdin as JSON "
               f"({e}).", file=sys.stderr)
         return 0
     if not isinstance(data, list):  # glab emits an object on errors (bad project, auth, etc.)
         print(json.dumps([]))
-        print(f"open-tickets: parse-gitlab-issues got a non-list response: "
+        print(f"open-tickets: {command} got a non-list response: "
               f"{json.dumps(data)[:200]}", file=sys.stderr)
         return 0
-    print(json.dumps([normalize_gitlab_issue(i) for i in data], indent=2))
+    print(json.dumps([normalize(i) for i in data], indent=2))
     return 0
 
+
+def _cmd_parse_gitlab_issues(rest):
+    return _parse_stdin_list("parse-gitlab-issues", normalize_gitlab_issue)
+
+
+def _cmd_parse_gitlab_reviews(rest):
+    return _parse_stdin_list("parse-gitlab-reviews", normalize_gitlab_review)
 
 def main(argv):
     if not argv:
         print("usage: open_tickets.py fetch [--user <JQL assignee expression>] "
-              "| parse-gitlab-issues", file=sys.stderr)
+              "| parse-gitlab-issues | parse-gitlab-reviews", file=sys.stderr)
         return 2
     if argv[0] == "fetch":
         return _cmd_fetch(argv[1:])
     if argv[0] == "parse-gitlab-issues":
         return _cmd_parse_gitlab_issues(argv[1:])
+    if argv[0] == "parse-gitlab-reviews":
+        return _cmd_parse_gitlab_reviews(argv[1:])
     print("usage: open_tickets.py fetch [--user <JQL assignee expression>] "
-          "| parse-gitlab-issues", file=sys.stderr)
+          "| parse-gitlab-issues | parse-gitlab-reviews", file=sys.stderr)
     return 2
 
 

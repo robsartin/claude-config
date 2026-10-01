@@ -123,7 +123,8 @@ for a single reading.
 ### Metric trend charts
 
 Below any metrics table, render each metric's trend as a chart, so a reader sees the shape at a
-glance while the table keeps the exact numbers. For **every metric with 2 or more readings in
+glance while the table keeps the exact numbers. (The weekly report is the exception: it uses the
+**Combined weekly chart** below.) For **every metric with 2 or more readings in
 range**, emit one fenced `mermaid` `xychart-beta` line chart from its `points` (the
 `[date, value]` pairs, already date-sorted):
 
@@ -201,6 +202,44 @@ whose name ends in `-hours` (show `summary.total` with an `h` suffix, e.g. `42.5
 metric shows a dash (`—`). Daily avg is `summary.avg`. The header tells the reader to trim it
 before sharing; never fabricate readings.
 
-Below the table, append the **Metric trend charts** (see above) for the same metrics — one chart
-per metric with 2+ readings. They fall inside the same "curate before sharing" section, so the
-reader trims table and charts together.
+Below the table, append charts for the same metrics. They fall inside the same "curate before
+sharing" section, so the reader trims table and charts together.
+
+- **Weekly report** — one **Combined weekly chart** (see below) instead of a chart per metric.
+- **Performance review** — the **Metric trend charts** (see above), one chart per metric with 2+
+  readings. A quarter of daily points is too dense to share one chart.
+
+### Combined weekly chart
+
+The weekly report plots every `-hours` metric on **one** `xychart-beta` chart with a fixed
+`0 --> 9` hours y-axis, so the metrics can be compared on one scale. One `line` per metric, in a
+stable order (the order the `metrics` pull returns them). xychart-beta draws no legend, so pin the
+line colors with `plotColorPalette` and add a one-line caption under the chart naming each color.
+Example (shown indented so the fence is literal):
+
+    ```mermaid
+    %%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4e79a7, #59a14f, #e15759, #f28e2b, #76b7b2"}}}}%%
+    xychart-beta
+        title "Daily hours"
+        x-axis ["09-21", "09-22", "09-23", "09-24", "09-25"]
+        y-axis "hours" 0 --> 9
+        line [6.5, 7.75, 7.5, 8.25, 6.5]
+        line [8, 8, 8, 8, 8]
+        line [0.5, 3, 2.25, 3.25, 1]
+    ```
+
+    Blue: sleep-hours. Green: work-hours. Red: meetings-hours.
+
+Rules:
+
+- **x-axis** — the dates (as `"MM-DD"`) that have a reading for **every** metric on the chart.
+  Every `line` must have one value per x-axis label; never fill a missing day with an invented
+  value. A metric missing readings on dates the others have gets left off the combined chart and
+  shown in its own **Metric trend chart** instead.
+- **y-axis** — `0 --> 9`. If any charted value exceeds 9, raise the max to that value rounded up,
+  rather than clipping the line.
+- **Non-`-hours` metrics** — they don't share the hours scale, so each gets its own **Metric
+  trend chart** below the combined one.
+- **Fewer than 2 dates** — no combined chart (one point is not a trend); the table stands alone.
+- **Caption colors** — palette order is blue, green, red, orange, teal. Name each line's color
+  in that order.

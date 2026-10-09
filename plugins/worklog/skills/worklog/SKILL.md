@@ -123,9 +123,9 @@ for a single reading.
 ### Metric trend charts
 
 Below any metrics table, render each metric's trend as a chart, so a reader sees the shape at a
-glance while the table keeps the exact numbers. (The weekly report is the exception: it uses the
-**Combined weekly chart** below.) For **every metric with 2 or more readings in
-range**, emit one fenced `mermaid` `xychart-beta` line chart from its `points` (the
+glance while the table keeps the exact numbers. (The weekly report and the metrics report are the
+exceptions: they use the **Combined weekly chart** below.) For **every metric with 2 or more
+readings in range**, emit one fenced `mermaid` `xychart-beta` line chart from its `points` (the
 `[date, value]` pairs, already date-sorted):
 
 - **title** — the metric name.
@@ -173,8 +173,10 @@ fabricate points — chart only the readings the `metrics` pull returned.
    `summary.total` with an `h` suffix, e.g. `42.5h`); every other metric shows a dash (`—`). Daily
    avg is `summary.avg`; Trend is the metric's `sparkline`. If the range is empty, say
    "no metrics in <range>"; never invent readings.
-4. Below the table, append the **Metric trend charts** (see above) for the same metrics. The
-   inline `sparkline` column stays as the compact/plain-text view; the charts are the richer view.
+4. Below the table, append the **Combined weekly chart** (see below) for the same metrics. Any
+   metric it leaves off (a non-`-hours` metric, or one missing days the others have) gets its own
+   **Metric trend chart** under it. The inline `sparkline` column stays as the compact/plain-text
+   view; the chart is the richer view.
 5. Write the draft to `<vaultPath>/<reportsDir>/Metrics-<YYYY>-W<ww>.md` for the user to read.
    Do not send it. Professional, factual — do not use the personal `voice` skill.
 
@@ -211,10 +213,11 @@ sharing" section, so the reader trims table and charts together.
 
 ### Combined weekly chart
 
-The weekly report plots every `-hours` metric on **one** `xychart-beta` chart with a fixed
-`0 --> 9` hours y-axis, so the metrics can be compared on one scale. One `line` per metric, in a
-stable order (the order the `metrics` pull returns them). xychart-beta draws no legend, so pin the
-line colors with `plotColorPalette` and add a one-line caption under the chart naming each color.
+The weekly report and the metrics report plot every `-hours` metric on **one** `xychart-beta`
+chart with a fixed `0 --> 9` hours y-axis, so the metrics can be compared on one scale. One `line`
+per metric, in a stable order (the order the `metrics` pull returns them). xychart-beta draws no
+legend, so pin the line colors with `plotColorPalette` and add a one-line caption under the chart
+naming each color.
 Example (shown indented so the fence is literal):
 
     ```mermaid

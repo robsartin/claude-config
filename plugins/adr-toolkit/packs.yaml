@@ -23,10 +23,21 @@ packs:
   swift:
     axis: language
     path: swift
+  php:
+    axis: language
+    path: php
   spring-boot:
     axis: framework
     path: spring-boot
     depends_on: [jvm]
+  laravel:
+    axis: framework
+    path: laravel
+    depends_on: [php]
+  symfony:
+    axis: framework
+    path: symfony
+    depends_on: [php]
   cli:
     axis: app-shape
     path: cli
@@ -116,6 +127,9 @@ packs:
   i18n-python:
     axis: interaction
     path: interaction/i18n-python
+  i18n-php:
+    axis: interaction
+    path: interaction/i18n-php
   observability-spring-boot:
     axis: interaction
     path: interaction/observability-spring-boot
@@ -148,6 +162,8 @@ interactions:
     adr: i18n-js-ts
   - when: [i18n, python]
     adr: i18n-python
+  - when: [i18n, php]
+    adr: i18n-php
   - when: [observability, spring-boot]
     adr: observability-spring-boot
   - when: [observability, js-ts]

@@ -155,16 +155,16 @@ adding one; the pack linter never sees these files, so their frontmatter is on y
 Currently authored:
 
 - **universal** (always applied)
-- **languages** — jvm (base), kotlin, java, python, js-ts
-- **framework** — spring-boot, django, fastapi, flask
+- **languages** — jvm (base), kotlin, java, python, js-ts, php
+- **framework** — spring-boot, django, fastapi, flask, laravel, symfony
 - **app-shapes** — cli, service, web-frontend, native-ui, accessibility (auto-pulled by UI shapes)
 - **ui-tech** — react, plain-js, compose
 - **library** — d3
 - **concerns** (opt-in) — i18n, observability, privacy
-- **interactions** — d3×{react, plain-js}, a11y×{react, compose}, i18n×{jvm, js-ts, python},
+- **interactions** — d3×{react, plain-js}, a11y×{react, compose}, i18n×{jvm, js-ts, python, php},
   observability×{spring-boot, js-ts, python}
 
-**Deferred** (see the `notready` backlog issues): PHP + Laravel/Symfony, Vue, Svelte, Swift/SwiftUI, and the library/published-artifact app-shape. If a
+**Deferred** (see the `notready` backlog issues): Vue, Svelte, Swift/SwiftUI, and the library/published-artifact app-shape. If a
 user names one of these, say it's not yet authored and proceed with what exists.
 
 See [`examples/`](../../examples/) for generated ADR sets across representative stacks.

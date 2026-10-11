@@ -27,6 +27,18 @@ packs:
     axis: framework
     path: spring-boot
     depends_on: [jvm]
+  django:
+    axis: framework
+    path: django
+    depends_on: [python]
+  fastapi:
+    axis: framework
+    path: fastapi
+    depends_on: [python]
+  flask:
+    axis: framework
+    path: flask
+    depends_on: [python]
   cli:
     axis: app-shape
     path: cli
@@ -122,6 +134,9 @@ packs:
   observability-js-ts:
     axis: interaction
     path: interaction/observability-js-ts
+  observability-python:
+    axis: interaction
+    path: interaction/observability-python
 
 interactions:
   - when: [d3, react]
@@ -152,3 +167,5 @@ interactions:
     adr: observability-spring-boot
   - when: [observability, js-ts]
     adr: observability-js-ts
+  - when: [observability, python]
+    adr: observability-python

@@ -156,16 +156,15 @@ Currently authored:
 
 - **universal** (always applied)
 - **languages** — jvm (base), kotlin, java, python, js-ts
-- **framework** — spring-boot
+- **framework** — spring-boot, django, fastapi, flask
 - **app-shapes** — cli, service, web-frontend, native-ui, accessibility (auto-pulled by UI shapes)
 - **ui-tech** — react, plain-js, compose
 - **library** — d3
 - **concerns** (opt-in) — i18n, observability, privacy
 - **interactions** — d3×{react, plain-js}, a11y×{react, compose}, i18n×{jvm, js-ts, python},
-  observability×{spring-boot, js-ts}
+  observability×{spring-boot, js-ts, python}
 
-**Deferred** (see the `notready` backlog issues): PHP + Laravel/Symfony, Python web
-framework, Vue, Svelte, Swift/SwiftUI, and the library/published-artifact app-shape. If a
+**Deferred** (see the `notready` backlog issues): PHP + Laravel/Symfony, Vue, Svelte, Swift/SwiftUI, and the library/published-artifact app-shape. If a
 user names one of these, say it's not yet authored and proceed with what exists.
 
 See [`examples/`](../../examples/) for generated ADR sets across representative stacks.

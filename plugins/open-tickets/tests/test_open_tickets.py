@@ -180,3 +180,36 @@ def test_parse_gitlab_reviews_cli_degrades_on_error_object(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert json.loads(captured.out) == []
     assert "parse-gitlab-reviews" in captured.err
+
+
+def _issue(ref, updated="2026-10-01T00:00:00.000Z", **over):
+    issue = {"iid": int(ref.rsplit("#", 1)[1]), "title": f"item {ref}", "labels": [],
+             "description": "", "updated_at": updated, "references": {"full": ref}}
+    issue.update(over)
+    return issue
+
+
+def test_parse_gitlab_issues_cli_merges_concatenated_arrays_and_dedupes(monkeypatch, capsys):
+    import io
+    import json
+    created = [_issue("team/service#9"), _issue("rsartin/rob-tracker#3")]
+    assigned = [_issue("team/service#9"), _issue("other/repo#5")]
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(created) + "\n" + json.dumps(assigned)))
+    assert ot.main(["parse-gitlab-issues"]) == 0
+    keys = [i["key"] for i in json.loads(capsys.readouterr().out)]
+    assert keys == ["team/service#9", "rsartin/rob-tracker#3", "other/repo#5"]
+
+
+def test_parse_gitlab_issues_cli_keeps_good_arrays_when_one_call_errors(monkeypatch, capsys):
+    import io
+    import json
+    stdin = json.dumps([_issue("team/service#9")]) + '\n{"message": "401 Unauthorized"}\n'
+    monkeypatch.setattr("sys.stdin", io.StringIO(stdin))
+    assert ot.main(["parse-gitlab-issues"]) == 0
+    captured = capsys.readouterr()
+    assert [i["key"] for i in json.loads(captured.out)] == ["team/service#9"]
+    assert "non-list" in captured.err
+
+
+def test_normalize_gitlab_issue_unlabeled_work_item_is_open():
+    assert ot.normalize_gitlab_issue(_issue("team/service#9"))["status"] == "Open"

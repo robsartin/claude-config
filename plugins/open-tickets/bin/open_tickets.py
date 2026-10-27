@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """open-tickets: fetch your open Jira issues (with description + recent comments),
-plus open issues from your personal GitLab tracker and the MRs you are reviewing,
+plus your open GitLab work items in any project and the MRs you are reviewing,
 so a blocker/next-step table can be drafted from them. Stdlib only."""
 import base64
 import json
@@ -88,15 +88,16 @@ def normalize_issue(issue, max_comments=MAX_COMMENTS):
 
 
 def normalize_gitlab_issue(issue):
-    """A `glab api /projects/:id/issues` result -> the same
+    """A `glab api /issues` (or `/projects/:id/issues`) result -> the same
     {key, summary, status, description, comments, updated} shape `normalize_issue`
     produces, so both sources can feed one table-building pass. `key` is the
-    project-qualified reference (e.g. "rsartin/rob-tracker#4"); `status` is the
-    label set (this tracker uses labels like "next"/"someday" as its board
+    project-qualified reference (e.g. "team/service#4"); `status` is the
+    label set (a personal tracker uses labels like "next"/"someday" as its board
     columns, which is more informative here than the constant `state=opened` the
-    fetch already filters on). `description` is already plain markdown, not ADF.
-    `comments` is always empty — a personal tracker's own description is kept
-    current by editing it (or by closing the issue), not by discussion threads."""
+    fetch already filters on), or "Open" when there are none. `description` is already plain markdown, not ADF.
+    `comments` is always empty: a personal tracker's description is kept current
+    by editing it, and a team work item's notes are for the agent to read when
+    the row needs them."""
     refs = issue.get("references") or {}
     return {
         "key": refs.get("full") or (f"#{issue.get('iid')}" if issue.get("iid") else ""),
@@ -167,31 +168,51 @@ def _cmd_fetch(rest):
     return 0
 
 
-def _parse_stdin_list(command, normalize):
-    """Read `glab api` JSON from stdin (a JSON array, or an error object such as
-    {"message": "404 Project Not Found"}) and print it normalized. Never shells out
-    to `glab` itself — same reasoning as worklog's parse-gitlab: invocation (and
-    the target host/project) stays in the skill's documented command, not
-    hardcoded in this script."""
+def _parse_stdin_list(command, normalize, dedupe=False):
+    """Read `glab api` JSON from stdin and print it normalized. Stdin may hold
+    several JSON values back to back (one per `glab api` call), so two queries can
+    share one pipe; each is a JSON array, or an error object such as
+    {"message": "404 Project Not Found"} that is skipped with a note while the
+    other calls' items still print. `dedupe` drops repeat keys, first one wins, for
+    queries that overlap (an issue both created by and assigned to you). Never
+    shells out to `glab` itself — same reasoning as worklog's parse-gitlab:
+    invocation (and the target host/project) stays in the skill's documented
+    command, not hardcoded in this script."""
     raw = sys.stdin.read()
+    decoder = json.JSONDecoder()
+    values, pos = [], 0
     try:
-        data = json.loads(raw) if raw.strip() else []
+        while True:
+            while pos < len(raw) and raw[pos].isspace():
+                pos += 1
+            if pos >= len(raw):
+                break
+            value, pos = decoder.raw_decode(raw, pos)
+            values.append(value)
     except json.JSONDecodeError as e:
         print(json.dumps([]))
         print(f"open-tickets: {command} failed to parse stdin as JSON "
               f"({e}).", file=sys.stderr)
         return 0
-    if not isinstance(data, list):  # glab emits an object on errors (bad project, auth, etc.)
-        print(json.dumps([]))
-        print(f"open-tickets: {command} got a non-list response: "
-              f"{json.dumps(data)[:200]}", file=sys.stderr)
-        return 0
-    print(json.dumps([normalize(i) for i in data], indent=2))
+    out, seen = [], set()
+    for data in values:
+        if not isinstance(data, list):  # glab emits an object on errors (bad project, auth, etc.)
+            print(f"open-tickets: {command} got a non-list response: "
+                  f"{json.dumps(data)[:200]}", file=sys.stderr)
+            continue
+        for item in data:
+            row = normalize(item)
+            if dedupe:
+                if row["key"] in seen:
+                    continue
+                seen.add(row["key"])
+            out.append(row)
+    print(json.dumps(out, indent=2))
     return 0
 
 
 def _cmd_parse_gitlab_issues(rest):
-    return _parse_stdin_list("parse-gitlab-issues", normalize_gitlab_issue)
+    return _parse_stdin_list("parse-gitlab-issues", normalize_gitlab_issue, dedupe=True)
 
 
 def _cmd_parse_gitlab_reviews(rest):

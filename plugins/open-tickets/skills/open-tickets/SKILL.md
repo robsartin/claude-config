@@ -1,12 +1,12 @@
 ---
 name: open-tickets
-description: Use to summarize a user's currently-open Jira tickets, personal GitLab tracker issues, and the MRs they are reviewing as a table, especially to surface what each one is blocked on and what the next step is. Triggers on "summarize my open tickets", "ticket status", "what am I blocked on", "waiting-on breakdown".
+description: Use to summarize a user's currently-open Jira tickets, GitLab work items, and the MRs they are reviewing as a table, especially to surface what each one is blocked on and what the next step is. Triggers on "summarize my open tickets", "ticket status", "what am I blocked on", "waiting-on breakdown".
 ---
 
 # Open Tickets
 
-Summarize the user's open Jira tickets, open issues from their personal GitLab tracker
-(`rob-tracker`), **and** the open MRs they are a reviewer on, as a single table with
+Summarize the user's open Jira tickets, the open GitLab work items they created or are
+assigned in any project, **and** the open MRs they are a reviewer on, as a single table with
 **ID, Description, Blocker, Next Steps** columns — one row per ticket/issue/review. The point
 is surfacing what's actually stalled waiting on someone else versus what's moving, since a
 normal Jira board (or a personal kanban) doesn't distinguish the two.
@@ -31,19 +31,26 @@ JQL comes back empty with no error, which would hide most of a user's actual wor
 missing token, or a network/auth failure all print `[]` and a one-line note on stderr and exit 0.
 Use `--user` to pass a different JQL assignee expression (default `currentUser()`).
 
-**Personal GitLab tracker (`rob-tracker`):**
+**GitLab work items (any project, personal tracker included):**
 
 ```bash
-glab api "/projects/rsartin%2Frob-tracker/issues?state=opened&per_page=100" \
+{ glab api "/issues?state=opened&scope=created_by_me&per_page=100"
+  glab api "/issues?state=opened&scope=assigned_to_me&per_page=100"; } \
   | python3 "${CLAUDE_PLUGIN_ROOT}/bin/open_tickets.py" parse-gitlab-issues
 ```
 
-`rob-tracker` is a personal to-do/kanban board kept as GitLab issues (labels like `next`/
-`someday` stand in for board columns). This never shells out to `glab` itself — same reasoning as
-the `worklog` plugin's `parse-gitlab`: `glab` is already authed to its default host, and the
-target project stays in the documented command rather than hardcoded in the script. Skip this
-source silently if `glab` isn't installed or the call errors (a missing tool shouldn't block the
-Jira half of the table).
+Work items live in the repo they are about, so this reads them across every project rather than
+from one tracker: everything open that you created or are assigned. A private personal tracker
+project (for items with no repo, or that shouldn't be visible to everyone) is covered by the same
+two calls, since you created its issues. The parser accepts both responses on one pipe and drops
+an item the two calls both return. Labels like `next`/`someday` show up as the status where a
+project has them; an unlabeled item reads `Open`.
+
+This never shells out to `glab` itself — same reasoning as the `worklog` plugin's `parse-gitlab`:
+`glab` is already authed to its default host, and the query stays in the documented command
+rather than hardcoded in the script. Skip this source silently if `glab` isn't installed or both
+calls error (a missing tool shouldn't block the Jira half of the table); if only one errors, the
+other's items still print, with a note on stderr.
 
 **MRs you are reviewing (GitLab):**
 
@@ -58,7 +65,7 @@ not ones you're asked to review. Each MR is keyed by the first Jira key in its t
 with their ticket, e.g. `ABC-123: ...`), falling back to the MR reference, so the review lines up
 with the ticket it belongs to even though that ticket is usually assigned to someone else. If a key
 also appears in the Jira fetch (you're reviewing an MR on your own ticket), keep the Jira row and
-skip the review row. Skip this source silently on any error, same as `rob-tracker`.
+skip the review row. Skip this source silently on any error, same as the work items.
 
 For a review row, read the MR's unresolved discussions when you need them to fill in Blocker/Next
 Steps: `comments` is empty for reviews, and the MR (not the ticket) is where the current state lives.
@@ -74,8 +81,9 @@ All three commands print a JSON array in the same shape, one object per open ite
 
 `comments` holds only the most recent handful (oldest of that tail first) for Jira — enough to
 see the latest disposition without dragging in a ticket's entire history; it's always empty for
-`rob-tracker` issues, which don't carry discussion threads (their `description` is kept current
-by editing it, or the issue is just closed). `updated` is sort-only plumbing, not a table column —
+work items. A personal tracker's items keep their `description` current by editing it; for a work
+item in a team project, read its notes (`glab api "/projects/<id>/issues/<iid>/notes"`) when the
+description alone doesn't settle the Blocker/Next Steps. `updated` is sort-only plumbing, not a table column —
 use it to interleave the three sources by recency into one fetch-order list before building the
 table.
 

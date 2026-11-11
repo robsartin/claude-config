@@ -41,6 +41,13 @@ plugins/worklog/                    # "worklog" — Python-backed (python3, no v
   skills/worklog/SKILL.md
   bin/worklog.py                    # log + report + metrics helpers
   commands/log.md, weekly-report.md, perf-review.md, metric.md, metrics.md
+plugins/morning-brief/               # "morning-brief" — Python-backed (python3, no venv)
+  .claude-plugin/plugin.json
+  skills/morning-brief/SKILL.md     # file the morning brief into the vault
+  skills/month-dates/SKILL.md       # fill This Month's dates from Google Calendar
+  skills/week-dates/SKILL.md        # fill This Week's agenda from Google Calendar
+  bin/morning_brief.py              # brief rotation + vault paths + week label helpers
+  commands/save-brief.md, fill-month.md, fill-week.md
 plugins/open-tickets/                # "open-tickets" — Python-backed (python3, no venv)
   .claude-plugin/plugin.json
   skills/open-tickets/SKILL.md
@@ -88,6 +95,10 @@ Before drafting anything as Rob, read that SKILL.md in full. The most load-beari
 ### worklog
 
 `worklog` captures work activity into a rolling Obsidian `Worklog.md` (via `/worklog:log`) and drafts weekly status reports (`/worklog:weekly-report`) or performance-review narratives (`/worklog:perf-review`) from it. Its helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (the `worklog` section of `~/.claude/start-work.json`), never part of this repo; reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports augment the hand-logged notes with a **factual pull** (tickets resolved + MRs merged in range). `/worklog:metric` records numeric KPIs (`work-hours` is a recommended one, alongside `sleep-hours` or energy) into a separate `Metrics.md`, accepting several `name=value` readings in one call (e.g. `work-hours=8 sleep-hours=7.2`) and upserting one value per name per day; `/worklog:metrics` drafts a trend report (a table with a Total column for `-hours` metrics, plus daily-average and sparkline columns, then derived counts) from it. The `help` event type (alongside `log`'s other event types) feeds the derived help-count KPI. Both the weekly report and the perf-review draft now end with a **Metrics (curate before sharing)** table pulled from `Metrics.md` (a Total column filled for `-hours` metrics, a dash otherwise, plus daily average) — trim it before using the draft, nothing is auto-sent, and the section is simply omitted when there are no readings in range.
+
+### morning-brief
+
+`morning-brief` looks after the planning notes in an Obsidian vault's `0 - Planning` folder. `/morning-brief:save-brief` files the morning brief as `Morning Brief.md` and rolls the previous one into History, the same rotation `Today.md` uses. `/morning-brief:fill-month` and `/morning-brief:fill-week` fill the dates section of `This Month.md` and the calendar agenda of `This Week.md` from Google Calendar; each refuses to write when the note's own `month:` / `week:` is not the current one, because that note has not been archived yet. Its helper (`bin/morning_brief.py`) runs directly on `python3`, no venv, and does the mechanical parts: the rotation, resolving vault paths, and printing the current week label the way the vault labels weeks. The calendar reading and summarising is left to the agent. The vault path is machine-local config (the `morningBrief` section of `~/.claude/start-work.json`); the skill files are the authority for the line formats.
 
 ### open-tickets
 

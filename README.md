@@ -38,7 +38,9 @@ claude-config/
 │   ├── kdp-publisher/             # Google Doc → KDP interior/cover/spec/EPUB (Python)
 │   ├── plugin-sync/               # the /plugin-sync:sync command + sync-plugins.sh
 │   ├── start-work/                # ticket/idea → tracked issue + branch, GitHub or GitLab/Jira (Python-backed)
-│   └── worklog/                   # work activity → Obsidian Worklog.md + weekly/perf report drafts (Python-backed)
+│   ├── worklog/                   # work activity → Obsidian Worklog.md + weekly/perf report drafts (Python-backed)
+│   ├── morning-brief/             # morning brief + month/week calendar fills for the Obsidian planning notes (Python-backed)
+│   └── open-tickets/              # open Jira tickets, GitLab work items and MRs under review as one table (Python-backed)
 ├── bin/
 │   └── bootstrap.sh              # one-shot new-machine setup
 └── README.md
@@ -65,7 +67,7 @@ Once `plugin-sync` is installed, run `/plugin-sync:sync` in any session to insta
 
 ```bash
 /plugin marketplace add robsartin/claude-config       # once per machine
-/plugin install <name>@claude-config                  # voice · adr-toolkit · wordpress-block-theme · kdp-publisher · plugin-sync · start-work · worklog
+/plugin install <name>@claude-config                  # any name in .claude-plugin/marketplace.json
 ```
 
 ## Other surfaces
@@ -100,6 +102,14 @@ Once `plugin-sync` is installed, run `/plugin-sync:sync` in any session to insta
 ## The worklog plugin
 
 `worklog` ships one skill plus five commands. `/worklog:log` captures work activity into a rolling Obsidian `Worklog.md`; `/worklog:weekly-report` and `/worklog:perf-review` draft a weekly status report or a performance-review narrative from it. Helpers (`bin/worklog.py`) run directly on `python3`, no venv. The vault path and report templates are machine-local config (never in this repo), and reports are drafts written into the vault, never sent. Where `jira`/`glab` are available, the reports can augment your hand-logged notes with a **factual pull** — tickets resolved and MRs merged in the range. `/worklog:metric` records numeric KPIs to a separate `Metrics.md`, upserted per day and accepting several `name=value` readings in one call (e.g. `work-hours=8 sleep-hours=7.2`; `work-hours` is a recommended one to track); `/worklog:metrics` drafts a trend report from it; the `help` event type feeds the report's derived help-count KPI. Both the weekly report and the perf-review draft now end with a **Metrics (curate before sharing)** table pulled from `Metrics.md` (a Total column filled for `-hours` metrics, plus a daily-average column, omitted when there are no readings) — trim it before using the draft, since nothing is auto-sent.
+
+## The morning-brief plugin
+
+`morning-brief` looks after the planning notes in my Obsidian vault's `0 - Planning` folder. `/morning-brief:save-brief` files the morning brief and rolls the previous one into History. `/morning-brief:fill-month` and `/morning-brief:fill-week` fill the month's dates and the week's calendar agenda from Google Calendar, and refuse to write into a note that has not been archived yet. The helper (`bin/morning_brief.py`) runs directly on `python3`, no venv; the vault path is machine-local config, never in this repo.
+
+## The open-tickets plugin
+
+`open-tickets` ships one skill and the `/open-tickets:open-tickets` command. It summarizes my open Jira tickets, open GitLab work items, and the GitLab MRs I am reviewing as an ID / Description / Blocker / Next Steps table, so work stalled on someone else stands out. The helper (`bin/open_tickets.py`) runs directly on `python3`, no venv, and only fetches the data; working out blockers and next steps is left to Claude.
 
 ## Adding more plugins later
 

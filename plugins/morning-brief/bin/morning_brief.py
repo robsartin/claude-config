@@ -198,15 +198,46 @@ def _cmd_paths(rest):
     return 0
 
 
+def week_info(day):
+    """The week `day` falls in, labelled the way the vault's Templater does
+    (moment `gggg-[W]ww`, en locale): weeks run Sunday to Saturday and week 1 is
+    the week holding January 1, so the week-year is the year of its Saturday."""
+    start = day - datetime.timedelta(days=(day.weekday() + 1) % 7)
+    end = start + datetime.timedelta(days=6)
+    jan1 = datetime.date(end.year, 1, 1)
+    first = jan1 - datetime.timedelta(days=(jan1.weekday() + 1) % 7)
+    number = (start - first).days // 7 + 1
+    return {
+        "week": f"{end.year}-W{number:02d}",
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+    }
+
+
+def _cmd_week(rest):
+    ap = argparse.ArgumentParser(prog="morning_brief.py week")
+    ap.add_argument("--date", default=None, help="treat this as today (YYYY-MM-DD)")
+    a = ap.parse_args(rest)
+    try:
+        day = datetime.date.fromisoformat(a.date) if a.date else datetime.date.today()
+    except ValueError:
+        print(f"morning-brief: invalid --date '{a.date}' (expected YYYY-MM-DD)", file=sys.stderr)
+        return 2
+    print(json.dumps(week_info(day), indent=2))
+    return 0
+
+
 def main(argv):
     if not argv:
-        print("usage: morning_brief.py <save|paths> ...", file=sys.stderr)
+        print("usage: morning_brief.py <save|paths|week> ...", file=sys.stderr)
         return 2
     cmd, rest = argv[0], argv[1:]
     if cmd == "save":
         return _cmd_save(rest)
     if cmd == "paths":
         return _cmd_paths(rest)
+    if cmd == "week":
+        return _cmd_week(rest)
     print(f"unknown subcommand: {cmd}", file=sys.stderr)
     return 2
 

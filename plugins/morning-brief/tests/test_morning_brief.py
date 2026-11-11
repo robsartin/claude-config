@@ -245,3 +245,40 @@ def test_paths_emits_resolved_locations(tmp_path, monkeypatch, capsys):
     assert data["brief"].endswith("0 - Planning/Morning Brief.md")
     assert data["archiveDir"].endswith("0 - Planning/History/2026/202608")
     assert data["archiveName"] == "brief - 20260824.md"
+
+
+# --- week (the vault's gggg-[W]ww labels: Sunday start, week 1 holds Jan 1) ---
+
+
+def test_week_info_matches_the_vault_label_midweek():
+    info = mb.week_info(datetime.date(2026, 11, 11))  # a Wednesday
+    assert info == {"week": "2026-W46", "start": "2026-11-08", "end": "2026-11-14"}
+
+
+def test_week_info_starts_a_new_week_on_sunday():
+    assert mb.week_info(datetime.date(2026, 11, 14))["week"] == "2026-W46"  # Saturday
+    assert mb.week_info(datetime.date(2026, 11, 15))["week"] == "2026-W47"  # Sunday
+
+
+def test_week_info_puts_late_december_in_next_years_week_one():
+    # Jan 1 2027 is a Friday, so its week (Dec 27 - Jan 2) is 2027-W01.
+    info = mb.week_info(datetime.date(2026, 12, 28))
+    assert info == {"week": "2027-W01", "start": "2026-12-27", "end": "2027-01-02"}
+
+
+def test_week_info_pads_single_digit_weeks():
+    assert mb.week_info(datetime.date(2026, 1, 5))["week"] == "2026-W02"
+
+
+def test_week_subcommand_prints_json(capsys):
+    assert mb.main(["week", "--date", "2026-11-11"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "week": "2026-W46",
+        "start": "2026-11-08",
+        "end": "2026-11-14",
+    }
+
+
+def test_week_subcommand_rejects_a_bad_date(capsys):
+    assert mb.main(["week", "--date", "11/11/2026"]) == 2
+    assert "invalid --date" in capsys.readouterr().err
